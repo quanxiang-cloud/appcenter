@@ -30,8 +30,6 @@ const (
 // Probe probe
 type Probe struct {
 	readiness int32
-
-	// log logr.Logger
 }
 
 // New return *Probe

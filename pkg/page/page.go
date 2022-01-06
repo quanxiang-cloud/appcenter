@@ -13,6 +13,11 @@ limitations under the License.
 
 package page
 
+const (
+	defaultSize = 20
+	defaultPage = 1
+)
+
 // Page Page
 type Page struct {
 	PageSize    int         `json:"-"`
@@ -25,16 +30,15 @@ type Page struct {
 
 // NewPage NewPage
 func NewPage(currentPage int, pageSize int, totalCount int64) *Page {
-	page := Page{}
+	page := Page{
+		PageSize:    pageSize,
+		CurrentPage: currentPage,
+	}
 	if pageSize == 0 {
-		page.PageSize = 20
-	} else {
-		page.PageSize = pageSize
+		page.PageSize = defaultSize
 	}
 	if currentPage == 0 {
-		page.CurrentPage = 1
-	} else {
-		page.CurrentPage = currentPage
+		page.CurrentPage = defaultPage
 	}
 	page.StartIndex = (page.CurrentPage - 1) * page.PageSize
 	page.TotalCount = totalCount

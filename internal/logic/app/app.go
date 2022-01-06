@@ -45,7 +45,7 @@ const (
 	importingStatus          = -2
 	errorImportStatus        = -3
 	appCenterRedis           = "appCenter:admins:"
-	appCenterRedisExpireTime = 60 * 60 //单位秒
+	appCenterRedisExpireTime = 60 * 60 // second
 	perInitTypes             = 1
 	name                     = "全部权限"
 	description              = "系统默认角色"

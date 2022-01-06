@@ -55,21 +55,21 @@ func NewRouter(c *config.Configs) (*Router, error) {
 
 	k := v1.Group("")
 	{
-		k.POST("/add", app.Add)                                                    //ok
-		k.POST("/update", app.Update)                                              //ok
-		k.POST("/adminList", checkIsSuperAdmin(app.AdminList, app.SuperAdminList)) //ok
-		k.POST("/one", app.One)                                                    //ok
-		k.POST("/addAdmin", app.AddAdmin)                                          //ok
-		k.POST("/delAdmin", app.DelAdmin)                                          //ok
-		k.POST("/del", app.Del)                                                    //ok
-		k.POST("/updateStatus", app.UpdateStatus)                                  //ok
-		k.POST("/adminUsers", app.AdminUsers)                                      //ok
-		k.POST("/checkIsAdmin", app.CheckIsAdmin)                                  //ok
+		k.POST("/add", app.Add)
+		k.POST("/update", app.Update)
+		k.POST("/adminList", checkIsSuperAdmin(app.AdminList, app.SuperAdminList))
+		k.POST("/one", app.One)
+		k.POST("/addAdmin", app.AddAdmin)
+		k.POST("/delAdmin", app.DelAdmin)
+		k.POST("/del", app.Del)
+		k.POST("/updateStatus", app.UpdateStatus)
+		k.POST("/adminUsers", app.AdminUsers)
+		k.POST("/checkIsAdmin", app.CheckIsAdmin)
 		k.POST("/checkAppAccess", app.CheckAppAccess)
 		k.POST("/importApp", app.CreateImportApp)
 
 		//----------------------home platform--------------------
-		k.POST("/userList", app.UserList) //ok
+		k.POST("/userList", app.UserList)
 		k.POST("/apps", app.GetAppsByIDs)
 
 		// -----------------provide services for other services-----------------

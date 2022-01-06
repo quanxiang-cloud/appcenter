@@ -1,7 +1,7 @@
 name=app-center
 version=v0.0.1
 repository=lowcode
-dockerHost=dockerhub.qingcloud.com
+dockerHost=dockerhub.xxxx.com
 env:
 #-- open go mod vendor --
 	go mod vendor
