@@ -17,9 +17,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	error2 "github.com/quanxiang-cloud/cabin/error"
+	id2 "github.com/quanxiang-cloud/cabin/id"
 	"github.com/quanxiang-cloud/cabin/logger"
-	"github.com/quanxiang-cloud/cabin/tailormade/header"
+	time2 "github.com/quanxiang-cloud/cabin/time"
+
+	"github.com/go-redis/redis/v8"
 
 	"github.com/quanxiang-cloud/appcenter/internal/logic"
 	"github.com/quanxiang-cloud/appcenter/internal/models"
@@ -31,26 +34,25 @@ import (
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/appcenter/pkg/page"
 	redis2 "github.com/quanxiang-cloud/appcenter/pkg/redis"
-	error2 "github.com/quanxiang-cloud/cabin/error"
 
-	time2 "github.com/quanxiang-cloud/cabin/time"
-
-	id2 "github.com/quanxiang-cloud/cabin/id"
 	"gorm.io/gorm"
 )
 
 const (
-	releaseStatus            = 1
-	unReleaseStatus          = -1
-	importingStatus          = -2
-	errorImportStatus        = -3
-	appCenterRedis           = "appCenter:admins:"
-	appCenterRedisExpireTime = 60 * 60 // second
-	perInitTypes             = 1
-	name                     = "全部权限"
-	description              = "系统默认角色"
-	randNumber               = 5
-	preDelete                = "preDelete"
+	releaseStatus     = 1
+	unReleaseStatus   = -1
+	importingStatus   = -2
+	errorImportStatus = -3
+	appCenterRedis    = "appCenter:admins:"
+	perInitTypes      = 1
+	name              = "全部权限"
+	description       = "系统默认角色"
+	randNumber        = 5
+	preDelete         = "preDelete"
+
+	changeAdminKey   = "appCenter:admins:change"
+	changeAdminValue = "lockValue"
+	lockExpTime      = 2
 )
 
 // app app
@@ -68,13 +70,12 @@ type app struct {
 
 // NewApp return a app instance
 func NewApp(c *config.Configs, db *gorm.DB) logic.AppCenter {
-
 	return &app{
 		app:               mysql.NewAppCenterRepo(),
 		appUser:           mysql.NewAppUserRelationRepo(),
 		appScope:          mysql.NewAppScopeRepo(),
 		DB:                db,
-		org:               client.NewUser(c),
+		org:               client.NewUser(c.InternalNet),
 		polyAPI:           client.NewPolyAPI(c),
 		redisClient:       redis2.ClusterClient,
 		flowAPI:           client.NewFlow(c),
@@ -250,7 +251,7 @@ func (a *app) Delete(ctx context.Context, rq *req.DelAppCenter) error {
 	}
 	_, err = a.flowAPI.RemoveApp(ctx, rq.ID, preDelete)
 	if err != nil {
-		logger.Logger.PutError(err, "delete flow is error ", header.GetRequestIDKV(ctx).Fuzzy())
+		logger.Logger.Error("delete flow is error ", err.Error())
 	}
 	return nil
 }
@@ -293,11 +294,25 @@ func (a *app) AddAdminUser(ctx context.Context, rq *req.AddAdminUser) error {
 		}
 	}
 	tx.Commit()
-	err = a.redisAdminUserCacheUpdate(ctx, rq.AppID, rq.UserIDs)
-	if err != nil {
-		logger.Logger.PutError(err, "delete is error", header.GetRequestIDKV(ctx).Fuzzy())
+	locker := redis2.NewLocker(changeAdminKey, changeAdminValue, lockExpTime, a.redisClient)
+	for {
+		out := time.After(lockExpTime * 100 * time.Millisecond)
+
+		<-out
+		lock, err := locker.Lock()
+		if err != nil {
+			return err
+		}
+		if lock {
+			err = a.redisAdminUserCacheUpdate(ctx, rq.AppID, rq.UserIDs)
+			if err != nil {
+				logger.Logger.Error("delete is error", err.Error())
+			}
+			locker.UnLock()
+			return nil
+		}
+
 	}
-	return nil
 }
 
 func (a *app) DelAdminUser(ctx context.Context, rq *req.DelAdminUser) error {
@@ -314,12 +329,25 @@ func (a *app) DelAdminUser(ctx context.Context, rq *req.DelAdminUser) error {
 		for k := range relations {
 			userIDs = append(userIDs, relations[k].UserID)
 		}
-		err = a.redisAdminUserCacheUpdate(ctx, rq.AppID, userIDs)
-		if err != nil {
-			logger.Logger.PutError(err, "delete redis is error ", header.GetRequestIDKV(ctx).Fuzzy())
-		}
+		locker := redis2.NewLocker(changeAdminKey, changeAdminValue, lockExpTime, a.redisClient)
+		for {
+			out := time.After(lockExpTime * 100 * time.Millisecond)
 
-		return nil
+			<-out
+			lock, err := locker.Lock()
+			if err != nil {
+				return err
+			}
+			if lock {
+				err = a.redisAdminUserCacheUpdate(ctx, rq.AppID, userIDs)
+				if err != nil {
+					logger.Logger.Error("delete redis is error ", err.Error())
+				}
+				locker.UnLock()
+				return nil
+			}
+
+		}
 	}
 	return error2.New(code.InvalidDel)
 }
@@ -332,7 +360,10 @@ func (a *app) AdminUsers(ctx context.Context, rq *req.SelectAdminUsers) (*page.P
 		for k := range relations {
 			ids = append(ids, relations[k].UserID)
 		}
-		userInfos, err := a.org.GetInfo(ctx, ids...)
+
+		userInfos, err := a.org.GetUserByIDs(ctx, &client.GetUserByIDsRequest{
+			IDs: ids,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -347,7 +378,7 @@ func (a *app) AdminUsers(ctx context.Context, rq *req.SelectAdminUsers) (*page.P
 
 // UserPageList UserPageList
 func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*page.Page, error) {
-	// find the appID
+	// find appID
 	appIDs, err := a.appScope.GetByScope(a.DB, rq.UserID, rq.DepID)
 	if err != nil {
 		return nil, err
@@ -410,21 +441,7 @@ func (a *app) CheckIsAdmin(ctx context.Context, rq *req.CheckIsAdminReq) bool {
 			return true
 		}
 		num := a.appUser.CountByAppIDAndUserID(rq.AppID, rq.UserID, a.DB)
-		if num > 0 {
-			relations := a.appUser.SelectByAppID(rq.AppID, a.DB)
-			if len(relations) > 0 {
-				userIDs := make([]string, 0)
-				for k := range relations {
-					userIDs = append(userIDs, relations[k].UserID)
-				}
-				err := a.redisAdminUserCacheUpdate(ctx, rq.AppID, userIDs)
-				if err != nil {
-					logger.Logger.Error(err)
-				}
-			}
-			return true
-		}
-		return false
+		return num > 0
 	}
 	return true
 }
@@ -440,7 +457,6 @@ func (a *app) redisAdminUserCacheUpdate(ctx context.Context, appID string, userI
 	}
 	for k := range userIDs {
 		err := a.redisClient.HSet(ctx, appCenterRedis+appID, userIDs[k], userIDs[k]).Err()
-		a.redisClient.Expire(ctx, appCenterRedis+appID, appCenterRedisExpireTime*time.Second)
 		if err != nil {
 			return err
 		}
@@ -451,7 +467,7 @@ func (a *app) redisAdminUserCacheUpdate(ctx context.Context, appID string, userI
 // AddAppScope AddAppScope
 func (a *app) AddAppScope(ctx context.Context, req *req.AddAppScopeReq) (*resp.AddAppScopeResp, error) {
 	tx := a.DB.Begin()
-	// 1. 删除
+	// 1. delete
 	err := a.appScope.DeleteByID(tx, req.AppID)
 	if err != nil {
 		tx.Rollback()

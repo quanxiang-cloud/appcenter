@@ -18,9 +18,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/quanxiang-cloud/appcenter/internal/db"
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/appcenter/pkg/probe"
+	"github.com/quanxiang-cloud/cabin/logger"
+	"github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	ginlog "github.com/quanxiang-cloud/cabin/tailormade/gin"
 )
 
@@ -40,36 +41,35 @@ type Router struct {
 }
 
 // NewRouter open the router
-func NewRouter(c *config.Configs) (*Router, error) {
+func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 	engine, err := newRouter(c)
 	if err != nil {
 		return nil, err
 	}
 
 	v1 := engine.Group("/api/v1/app-center")
-	err = db.InitDB()
+	db, err := mysql.New(c.Mysql, log)
 	if err != nil {
 		return nil, err
 	}
-	app := NewAppCenter(c, db.DB)
+	app := NewAppCenter(c, db)
 
 	k := v1.Group("")
 	{
-		k.POST("/add", app.Add)
-		k.POST("/update", app.Update)
-		k.POST("/adminList", checkIsSuperAdmin(app.AdminList, app.SuperAdminList))
-		k.POST("/one", app.One)
-		k.POST("/addAdmin", app.AddAdmin)
-		k.POST("/delAdmin", app.DelAdmin)
-		k.POST("/del", app.Del)
-		k.POST("/updateStatus", app.UpdateStatus)
-		k.POST("/adminUsers", app.AdminUsers)
-		k.POST("/checkIsAdmin", app.CheckIsAdmin)
+		k.POST("/add", app.Add)                                                    //ok
+		k.POST("/update", app.Update)                                              //ok
+		k.POST("/adminList", checkIsSuperAdmin(app.AdminList, app.SuperAdminList)) //ok
+		k.POST("/one", app.One)                                                    //ok
+		k.POST("/addAdmin", app.AddAdmin)                                          //ok
+		k.POST("/delAdmin", app.DelAdmin)                                          //ok
+		k.POST("/del", app.Del)                                                    //ok
+		k.POST("/updateStatus", app.UpdateStatus)                                  //ok
+		k.POST("/adminUsers", app.AdminUsers)                                      //ok
+		k.POST("/checkIsAdmin", app.CheckIsAdmin)                                  //ok
 		k.POST("/checkAppAccess", app.CheckAppAccess)
-		k.POST("/importApp", app.CreateImportApp)
 
 		//----------------------home platform--------------------
-		k.POST("/userList", app.UserList)
+		k.POST("/userList", app.UserList) //ok
 		k.POST("/apps", app.GetAppsByIDs)
 
 		// -----------------provide services for other services-----------------
@@ -79,6 +79,23 @@ func NewRouter(c *config.Configs) (*Router, error) {
 		k.POST("/failImport", app.FailImport)
 		k.POST("/checkVersion", app.CheckVersion)
 		k.POST("/exportApp", app.ExportApp)
+		k.POST("/importApp", app.CreateImportApp)
+	}
+
+	template := NewTemplate(c, db)
+	t := v1.Group("/template")
+	{
+		t.POST("/create", template.Create)
+		t.POST("/delete", template.Delete)
+		t.POST("/toPublic", template.ToPublic)
+		t.POST("/toPrivate", template.ToPrivate)
+		t.POST("/publicList", template.GetTemplateByPage)
+		t.POST("/selfList", template.GetSelfTemplate)
+		t.POST("/getOne", template.GetTemplateByID)
+		t.POST("/checkNameRepeat", template.CheckNameRepeat)
+		t.POST("/update", template.ModifyTemplate)
+
+		t.POST("/finish", template.FinishCreating)
 	}
 
 	r := &Router{
@@ -96,7 +113,7 @@ func newRouter(c *config.Configs) (*gin.Engine, error) {
 	}
 	gin.SetMode(c.Model)
 	engine := gin.New()
-	engine.Use(ginlog.GinLogger(), ginlog.GinRecovery())
+	engine.Use(ginlog.LoggerFunc(), ginlog.LoggerFunc())
 	return engine, nil
 }
 
@@ -119,7 +136,10 @@ func (r *Router) Run() {
 		WriteTimeout:      r.c.HTTPServer.WriteTimeOut * time.Second,
 		MaxHeaderBytes:    r.c.HTTPServer.MaxHeaderBytes,
 	}
-	s.ListenAndServe()
+	err := s.ListenAndServe()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Close close server

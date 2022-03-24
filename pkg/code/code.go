@@ -20,20 +20,27 @@ func init() {
 }
 
 const (
-	// InvalidURI 无效的URI
+	// InvalidURI Invalid URI
 	InvalidURI = 90014000000
-	// InvalidParams 无效的参数
+	// InvalidParams Invalid params
 	InvalidParams = 90014000001
-	// InvalidTimestamp 无效的时间格式
+	// InvalidTimestamp Invalid timestamp
 	InvalidTimestamp = 90014000002
-	// NameExist 名字已经存在
+	// NameExist Name already exist
 	NameExist = 90014000003
-	// InvalidDel 无效的删除
+	// InvalidDel Invalid Delection
 	InvalidDel = 90014000004
-	// ErrIdentifiesExist 唯一标识已存在
+	// ErrIdentifiesExist Identifies already exist
 	ErrIdentifiesExist = 90014000005
-	// ErrVersion 版本不兼容
+	// ErrVersion Version incompatibility
 	ErrVersion = 90014000006
+
+	// ErrDataNotExist Data not exist
+	ErrDataNotExist = 90014000007
+	// ErrNoPermission Do not hava permission
+	ErrNoPermission = 90014000008
+	// ErrActionTimeOut Timeout
+	ErrActionTimeOut = 90014000010
 )
 
 // CodeTable 码表
@@ -45,4 +52,7 @@ var CodeTable = map[int64]string{
 	InvalidDel:         "删除无效！对象不存在或请检查参数！",
 	ErrIdentifiesExist: "唯一标识已存在",
 	ErrVersion:         "版本不兼容",
+	ErrDataNotExist:    "数据不存在",
+	ErrNoPermission:    "没有权限",
+	ErrActionTimeOut:   "操作超时，稍后请再次尝试",
 }

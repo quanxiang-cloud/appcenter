@@ -45,8 +45,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// 启动路由
-	router, err := restful.NewRouter(config.Config)
+	// start router
+	router, err := restful.NewRouter(config.Config, logger.Logger)
 	if err != nil {
 		panic(err)
 	}
