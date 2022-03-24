@@ -96,7 +96,7 @@ type Result struct {
 	Attr   int    `json:"attr"` //11 add ok,0fail,12, update ok
 }
 
-//OthAddUsers 实际请求
+//OthAddUsers OthAddUsers
 func (u *user) OthAddUsers(ctx context.Context, r *AddUsersRequest) (*AddListResponse, error) {
 	response := &AddListResponse{}
 	err := client.POST(ctx, &u.client, host+othAddUsersURI, r, response)
