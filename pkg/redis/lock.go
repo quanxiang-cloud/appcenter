@@ -45,10 +45,7 @@ func (o *Locker) Lock() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if get != "" && get == o.Value {
-		return true, nil
-	}
-	return false, nil
+	return get != "" && get == o.Value, nil
 
 }
 

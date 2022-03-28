@@ -47,10 +47,7 @@ func NewAppTemplate(conf *config.Configs, db *gorm.DB) logic.AppTemplate {
 
 func (a *appTemplate) isNameRepeat(ctx context.Context, name string) bool {
 	template, err := a.templateRepo.SelectByName(ctx, a.db, name)
-	if err != nil || template != nil {
-		return true
-	}
-	return false
+	return err != nil || template != nil
 }
 
 func (a *appTemplate) preCreate(ctx context.Context, req *req.CreateTemplateReq) error {

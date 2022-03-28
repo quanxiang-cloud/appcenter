@@ -24,7 +24,7 @@ import (
 type appTemplateRepo struct {
 }
 
-//NewAppTemplateRepo 初始化
+//NewAppTemplateRepo init
 func NewAppTemplateRepo() models.AppTemplateRepo {
 	return &appTemplateRepo{}
 }
@@ -83,9 +83,6 @@ func (a *appTemplateRepo) SelectByID(ctx context.Context, db *gorm.DB, id string
 	err := db.Error
 	if err != nil {
 		return nil, err
-	}
-	if db.RowsAffected <= 0 {
-		return nil, nil
 	}
 	return template, nil
 }
