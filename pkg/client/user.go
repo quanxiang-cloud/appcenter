@@ -154,14 +154,14 @@ type OneUserResponse struct {
 	Phone     string              `json:"phone,omitempty" `
 	Email     string              `json:"email,omitempty" `
 	SelfEmail string              `json:"selfEmail,omitempty" `
-	UseStatus int                 `json:"useStatus,omitempty" ` //状态：1正常，-2禁用，-3离职，-1删除，2激活==1 （与账号库相同）
-	TenantID  string              `json:"tenantID,omitempty" `  //租户id
-	Position  string              `json:"position,omitempty" `  //职位
-	Avatar    string              `json:"avatar,omitempty" `    //头像
-	JobNumber string              `json:"jobNumber,omitempty" ` //工号
-	Status    int                 `json:"status"`               //第一位：密码是否需要重置
-	Dep       [][]DepOneResponse  `json:"deps,omitempty"`       //用户所在部门
-	Leader    [][]OneUserResponse `json:"leaders,omitempty"`    //用户所在部门
+	UseStatus int                 `json:"useStatus,omitempty" ` // Status: 1 Normal, -2 disabled, -3 demission, -1 Deleted, 2 Active ==1 (same as account library)
+	TenantID  string              `json:"tenantID,omitempty" `  // the tenant id
+	Position  string              `json:"position,omitempty" `  // position
+	Avatar    string              `json:"avatar,omitempty" `    //
+	JobNumber string              `json:"jobNumber,omitempty" `
+	Status    int                 `json:"status"`
+	Dep       [][]DepOneResponse  `json:"deps,omitempty"`
+	Leader    [][]OneUserResponse `json:"leaders,omitempty"`
 }
 
 // DepOneResponse DepOneResponse
@@ -170,10 +170,10 @@ type DepOneResponse struct {
 	Name      string `json:"name"`
 	LeaderID  string `json:"leaderID"`
 	UseStatus int    `json:"useStatus,omitempty"`
-	PID       string `json:"pid"`               //上层ID
-	SuperPID  string `json:"superID,omitempty"` //最顶层父级ID
-	Grade     int    `json:"grade,omitempty"`   //部门等级
-	Attr      int    `json:"attr"`              //1公司，2部门
+	PID       string `json:"pid"`               //The upper ID
+	SuperPID  string `json:"superID,omitempty"` //ID of the top-level parent
+	Grade     int    `json:"grade,omitempty"`   //Department level
+	Attr      int    `json:"attr"`              //1 company, 2 department
 }
 
 //GetUserInfo GetUserInfo
@@ -229,7 +229,7 @@ func (u *user) GetDepByIDs(ctx context.Context, r *GetDepByIDsRequest) (*GetDepB
 // GetUsersByDepIDRequest GetUsersByDepIDRequest
 type GetUsersByDepIDRequest struct {
 	DepID          string `json:"depID"`
-	IsIncludeChild int    `json:"isIncludeChild"` //1包含
+	IsIncludeChild int    `json:"isIncludeChild"`
 }
 
 // GetUsersByDepIDResponse GetUsersByDepIDResponse
