@@ -18,6 +18,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/quanxiang-cloud/appcenter/pkg/broker"
+	"github.com/quanxiang-cloud/appcenter/pkg/chaos/proxy"
+	"github.com/quanxiang-cloud/appcenter/pkg/chaos/proxy/handle"
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/appcenter/pkg/probe"
 	"github.com/quanxiang-cloud/cabin/logger"
@@ -105,6 +108,26 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 	}
 	r.probe()
 	return r, nil
+}
+
+func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger) (*Router, error) {
+	engine, err := newRouter(c)
+	if err != nil {
+		return nil, err
+	}
+
+	initHandler := handle.New(c.WorkLoad, c.MaximumRetry, b, log)
+	// TODO: set executors
+	// initHandler.SetTaskExecutors()
+	// initHandler.SetResultExecutors()
+
+	p := proxy.NewProxy(initHandler, log)
+	engine.POST("/init", p.Handle)
+
+	return &Router{
+		c:      c,
+		engine: engine,
+	}, nil
 }
 
 func newRouter(c *config.Configs) (*gin.Engine, error) {

@@ -41,6 +41,9 @@ type Configs struct {
 	Redis             redis2.Config   `yaml:"redis"`
 	InnerHost         InnerHostConfig `yaml:"innerHost"`
 	CompatibleVersion string          `yaml:"compatibleVersion"`
+
+	WorkLoad     int
+	MaximumRetry int
 }
 
 // InnerHostConfig InnerHostConfig
