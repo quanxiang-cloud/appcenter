@@ -1,28 +1,28 @@
-package proxy
+package chaos
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/define"
-	"github.com/quanxiang-cloud/appcenter/pkg/chaos/proxy/handle"
+	"github.com/quanxiang-cloud/appcenter/pkg/chaos/handle"
 	error2 "github.com/quanxiang-cloud/cabin/error"
 	"github.com/quanxiang-cloud/cabin/logger"
 	"github.com/quanxiang-cloud/cabin/tailormade/resp"
 )
 
-type Proxy struct {
+type Chaos struct {
 	log     logger.AdaptedLogger
 	handler *handle.InitHandler
 }
 
-func NewProxy(handler *handle.InitHandler, log logger.AdaptedLogger) *Proxy {
+func New(handler *handle.InitHandler, log logger.AdaptedLogger) *Chaos {
 	handler.Run()
-	return &Proxy{
+	return &Chaos{
 		log:     log,
 		handler: handler,
 	}
 }
 
-func (p *Proxy) Handle(c *gin.Context) {
+func (p *Chaos) Handle(c *gin.Context) {
 	msg := define.Msg{}
 	if err := c.ShouldBind(&msg); err != nil {
 		resp.Format(nil, error2.NewErrorWithString(error2.ErrParams, err.Error()))
@@ -33,6 +33,4 @@ func (p *Proxy) Handle(c *gin.Context) {
 		resp.Format(nil, error2.NewErrorWithString(error2.ErrParams, err.Error()))
 		return
 	}
-
-	c.JSON(200, `{"response": "hello"}`)
 }

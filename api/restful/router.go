@@ -19,8 +19,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/quanxiang-cloud/appcenter/pkg/broker"
-	"github.com/quanxiang-cloud/appcenter/pkg/chaos/proxy"
-	"github.com/quanxiang-cloud/appcenter/pkg/chaos/proxy/handle"
+	"github.com/quanxiang-cloud/appcenter/pkg/chaos"
+	"github.com/quanxiang-cloud/appcenter/pkg/chaos/handle"
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/appcenter/pkg/probe"
 	"github.com/quanxiang-cloud/cabin/logger"
@@ -121,7 +121,7 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 	// initHandler.SetTaskExecutors()
 	// initHandler.SetResultExecutors()
 
-	p := proxy.NewProxy(initHandler, log)
+	p := chaos.New(initHandler, log)
 	engine.POST("/init", p.Handle)
 
 	return &Router{
