@@ -44,9 +44,6 @@ const (
 	importingStatus   = -2
 	errorImportStatus = -3
 	appCenterRedis    = "appCenter:admins:"
-	perInitTypes      = 1
-	name              = "全部权限"
-	description       = "系统默认角色"
 	randNumber        = 5
 	preDelete         = "preDelete"
 
@@ -65,6 +62,7 @@ type app struct {
 	redisClient       *redis.ClusterClient
 	polyAPI           client.PolyAPI
 	flowAPI           client.Flow
+	chaosAPI          client.Chaos
 	CompatibleVersion string
 }
 
@@ -79,6 +77,7 @@ func NewApp(c *config.Configs, db *gorm.DB) logic.AppCenter {
 		polyAPI:           client.NewPolyAPI(c),
 		redisClient:       redis2.ClusterClient,
 		flowAPI:           client.NewFlow(c),
+		chaosAPI:          client.NewChaos(c),
 		CompatibleVersion: c.CompatibleVersion,
 	}
 }
@@ -173,18 +172,23 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 		CreateBy: rq.CreateBy,
 	}
 	tx.Commit()
-	// init server
-	scopes := make([]*client.ScopesVO, 0)
-	scope := &client.ScopesVO{
-		ID:   rq.CreateBy,
-		Type: 1,
-		Name: rq.CreateByName,
-	}
-	scopes = append(scopes, scope)
-	_, err = a.polyAPI.RequestPath(ctx, id, name, description, perInitTypes, scopes)
-	if err != nil {
-		return nil, err
-	}
+
+	// // init server
+	// scopes := make([]*client.ScopesVO, 0)
+	// scope := &client.ScopesVO{
+	// 	ID:   rq.CreateBy,
+	// 	Type: 1,
+	// 	Name: rq.CreateByName,
+	// }
+	// scopes = append(scopes, scope)
+	// _, err = a.polyAPI.RequestPath(ctx, id, name, description, perInitTypes, scopes)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// TODO: init content
+	a.chaosAPI.Init(ctx, id, rq.CreateBy, rq.CreateByName, 0)
+
 	return &center, nil
 }
 

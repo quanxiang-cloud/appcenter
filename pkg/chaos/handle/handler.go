@@ -2,7 +2,6 @@ package handle
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/quanxiang-cloud/appcenter/pkg/broker"
@@ -13,24 +12,22 @@ import (
 type handler func(define.Msg, int) error
 
 func buildExec(executors []Executor) handler {
-	sort.Slice(executors, func(i, j int) bool {
-		return executors[i].Bit() > executors[j].Bit()
-	})
-
-	return func(msg define.Msg, maximum int) error {
-		var count, retry = 0, true
+	return func(msg define.Msg, maximum int) (err error) {
+		var count = 0
 
 	RETRY:
-		for count < maximum && retry {
+		for count < maximum {
 			for _, e := range executors {
-				if err := e.Exec(msg); err != nil {
-					count++
-					continue RETRY
+				if (msg.Content & e.Bit()) == e.Bit() {
+					if err = e.Exec(msg); err != nil {
+						count++
+						continue RETRY
+					}
 				}
 			}
-			retry = false
+			return
 		}
-		return nil
+		return
 	}
 }
 
@@ -83,7 +80,7 @@ func (ih *InitHandler) Run() {
 		}
 	}
 	for i := 0; i < ih.workload; i++ {
-		go ih.consume()
+		go ih.run()
 	}
 	ih.withCancel()
 }
@@ -108,7 +105,7 @@ func (ih *InitHandler) withCancel() {
 	}()
 }
 
-func (ih *InitHandler) consume() {
+func (ih *InitHandler) run() {
 	for {
 		msg := <-ih.task
 		if err := ih.taskHandler(msg, ih.maximumRetry); err != nil {
