@@ -97,6 +97,8 @@ func (a *app) AdminPageList(ctx context.Context, rq *req.SelectListAppCenter) (*
 			appc.CreateTime = list[k].CreateTime
 			appc.UpdateTime = list[k].UpdateTime
 			appc.UseStatus = list[k].UseStatus
+			appc.Extension = getExtension(list[k].Extension)
+			appc.Description = list[k].Description
 			res = append(res, appc)
 		}
 		page := page.Page{}
@@ -122,6 +124,8 @@ func (a *app) SuperAdminPageList(ctx context.Context, rq *req.SelectListAppCente
 			appc.CreateTime = list[k].CreateTime
 			appc.UpdateTime = list[k].UpdateTime
 			appc.UseStatus = list[k].UseStatus
+			appc.Extension = getExtension(list[k].Extension)
+			appc.Description = list[k].Description
 			res = append(res, appc)
 		}
 		page := page.Page{}
@@ -155,6 +159,8 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 	app.UpdateTime = nowUnix
 	app.UseStatus = unReleaseStatus
 	app.AppSign = rq.AppSign
+	app.Extension = getExtension(rq.Extension)
+	app.Description = rq.Description
 	tx := a.DB.Begin()
 	err := a.app.Insert(&app, tx)
 	if err != nil {
@@ -216,6 +222,8 @@ func (a *app) Update(ctx context.Context, rq *req.UpdateAppCenter) error {
 	appc.AppIcon = rq.AppIcon
 	appc.UpdateBy = rq.UpdateBy
 	appc.UpdateTime = nowUnix
+	appc.Extension = getExtension(rq.Extension)
+	appc.Description = rq.Description
 	tx := a.DB.Begin()
 	err := a.app.Update(&appc, tx)
 	if err != nil {
@@ -271,6 +279,8 @@ func (a *app) AdminSelectByID(ctx context.Context, rq *req.SelectOneAppCenter) (
 		res.UseStatus = appc.UseStatus
 		res.DelFlag = appc.DelFlag
 		res.AppSign = appc.AppSign
+		res.Extension = getExtension(appc.Extension)
+		res.Description = appc.Description
 		return &res, nil
 	}
 	return nil, nil
@@ -396,6 +406,8 @@ func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*p
 				appc.AppName = list[k].AppName
 				appc.AccessURL = list[k].AccessURL
 				appc.AppIcon = list[k].AppIcon
+				appc.Extension = getExtension(list[k].Extension)
+				appc.Description = list[k].Description
 				res = append(res, appc)
 			}
 		}
@@ -419,10 +431,12 @@ func (a *app) GetAppsByIDs(ctx context.Context, req *req.GetAppsByIDsReq) (*resp
 
 	for _, appc := range apps {
 		result.Apps = append(result.Apps, &resp.UserAppCenter{
-			ID:        appc.ID,
-			AppName:   appc.AppName,
-			AppIcon:   appc.AppIcon,
-			AccessURL: appc.AccessURL,
+			ID:          appc.ID,
+			AppName:     appc.AppName,
+			AppIcon:     appc.AppIcon,
+			AccessURL:   appc.AccessURL,
+			Extension:   getExtension(appc.Extension),
+			Description: appc.Description,
 		})
 	}
 
@@ -595,4 +609,11 @@ func (a *app) CheckAppAccess(ctx context.Context, rq *req.CheckAppAccessReq) (*r
 	return &resp.CheckAppAccessResp{
 		IsAuthority: appIDCount > 0,
 	}, nil
+}
+
+func getExtension(data map[string]interface{}) map[string]interface{} {
+	if data == nil {
+		return map[string]interface{}{}
+	}
+	return data
 }

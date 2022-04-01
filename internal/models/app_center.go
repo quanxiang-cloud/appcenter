@@ -13,7 +13,11 @@ limitations under the License.
 
 package models
 
-import "gorm.io/gorm"
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"gorm.io/gorm"
+)
 
 const (
 	// Deleted Deleted
@@ -21,6 +25,9 @@ const (
 	// NotDeleted NotDeleted
 	NotDeleted int64 = 0
 )
+
+// Extension Extension
+type Extension map[string]interface{}
 
 //AppCenter AppCenter
 type AppCenter struct {
@@ -36,8 +43,20 @@ type AppCenter struct {
 	DelFlag    int64  `gorm:"column:del_flag;"  json:"delFlag"`     //delete marker 0 not deleted 1 deleted
 	// The default time is five days after you click delete.
 	// If you click delete in the recycle bin, the delete time changes to the current time
-	DeleteTime int64  `gorm:"column:delete_time;type:bigint; " json:"deleteTime"` //default remove
-	AppSign    string `gorm:"column:app_sign" json:"appSign"`
+	DeleteTime  int64     `gorm:"column:delete_time;type:bigint; " json:"deleteTime"` //default remove
+	AppSign     string    `gorm:"column:app_sign" json:"appSign"`
+	Description string    `gorm:"column:description" json:"description"`
+	Extension   Extension `gorm:"column:extension"`
+}
+
+// Value Value
+func (e Extension) Value() (driver.Value, error) {
+	return json.Marshal(e)
+}
+
+// Scan Scan
+func (e *Extension) Scan(data interface{}) error {
+	return json.Unmarshal(data.([]byte), &e)
 }
 
 //TableName get the table name

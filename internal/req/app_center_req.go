@@ -15,23 +15,27 @@ package req
 
 //AddAppCenter AddAppCenter
 type AddAppCenter struct {
-	AppName      string `json:"appName" binding:"required,max=80,excludesall=0x2C!@#$?.%:*&^+><=；;"`
-	AccessURL    string `json:"accessURL"`
-	AppIcon      string `json:"appIcon"`
-	CreateBy     string `json:"-"`
-	CreateByName string `json:"_"`
-	AppSign      string `json:"appSign" binding:"required,alphanum"`
+	AppName      string                 `json:"appName" binding:"required,max=80,excludesall=0x2C!@#$?.%:*&^+><=；;"`
+	AccessURL    string                 `json:"accessURL"`
+	AppIcon      string                 `json:"appIcon"`
+	CreateBy     string                 `json:"-"`
+	CreateByName string                 `json:"_"`
+	AppSign      string                 `json:"appSign" binding:"required,alphanum"`
+	Extension    map[string]interface{} `json:"extension"`
+	Description  string                 `json:"description"`
 }
 
 //UpdateAppCenter UpdateAppCenter
 type UpdateAppCenter struct {
-	ID        string `json:"id" binding:"required,max=64"`
-	AppName   string `json:"appName" binding:"max=80,excludesall=0x2C!@#$?.%:*&^+><=；;"`
-	AccessURL string `json:"accessURL"`
-	AppIcon   string `json:"appIcon"`
-	UseStatus int    `json:"useStatus"` //published:1，unpublished:-1
-	UpdateBy  string `json:"-"`
-	AppSign   string `json:"appSign"`
+	ID          string                 `json:"id" binding:"required,max=64"`
+	AppName     string                 `json:"appName" binding:"max=80,excludesall=0x2C!@#$?.%:*&^+><=；;"`
+	AccessURL   string                 `json:"accessURL"`
+	AppIcon     string                 `json:"appIcon"`
+	UseStatus   int                    `json:"useStatus"` //published:1，unpublished:-1
+	UpdateBy    string                 `json:"-"`
+	AppSign     string                 `json:"appSign"`
+	Extension   map[string]interface{} `json:"extension"`
+	Description string                 `json:"description"`
 }
 
 // DelAppCenter DelAppCenter

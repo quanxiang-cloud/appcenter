@@ -9,9 +9,9 @@ http:
 #-------------------mysql---------------------
 mysql:
   db: app_center
-  host: 
+  host: 192.168.200.18:3306
   user: root
-  password: 
+  password: uyWxtvt6gCOy3VPLB3rTpa0rQ
   log: true
 
 
@@ -37,9 +37,9 @@ internalNet:
 #-------------------redis-----------------
 redis:
   addrs:
-    - 
-    - 
-    - 
+    - "192.168.200.18:6379"
+    - "192.168.200.19:6379"
+    - "192.168.200.20:6379"
   username:
   password:
 

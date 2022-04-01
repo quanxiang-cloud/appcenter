@@ -15,25 +15,29 @@ package resp
 
 // AdminAppCenter AdminAppCenter
 type AdminAppCenter struct {
-	ID         string `json:"id"`
-	AppName    string `json:"appName,omitempty"`
-	AccessURL  string `json:"accessURL,omitempty"`
-	AppIcon    string `json:"appIcon,omitempty"`
-	CreateBy   string `json:"createBy,omitempty"`
-	UpdateBy   string `json:"updateBy,omitempty"`
-	CreateTime int64  `json:"createTime,omitempty"`
-	UpdateTime int64  `json:"updateTime,omitempty"`
-	UseStatus  int    `json:"useStatus,omitempty"` //published:1，unpublished:-1
-	DelFlag    int64  `json:"delFlag,omitempty"`
-	AppSign    string `json:"appSign,omitempty"`
+	ID          string                 `json:"id"`
+	AppName     string                 `json:"appName,omitempty"`
+	AccessURL   string                 `json:"accessURL,omitempty"`
+	AppIcon     string                 `json:"appIcon,omitempty"`
+	CreateBy    string                 `json:"createBy,omitempty"`
+	UpdateBy    string                 `json:"updateBy,omitempty"`
+	CreateTime  int64                  `json:"createTime,omitempty"`
+	UpdateTime  int64                  `json:"updateTime,omitempty"`
+	UseStatus   int                    `json:"useStatus,omitempty"` //published:1，unpublished:-1
+	DelFlag     int64                  `json:"delFlag,omitempty"`
+	AppSign     string                 `json:"appSign,omitempty"`
+	Extension   map[string]interface{} `json:"extension"`
+	Description string                 `json:"description"`
 }
 
 // UserAppCenter UserAppCenter
 type UserAppCenter struct {
-	ID        string `json:"id,omitempty"`
-	AppName   string `json:"appName"`
-	AccessURL string `json:"accessURL"`
-	AppIcon   string `json:"appIcon"`
+	ID          string                 `json:"id,omitempty"`
+	AppName     string                 `json:"appName"`
+	AccessURL   string                 `json:"accessURL"`
+	AppIcon     string                 `json:"appIcon"`
+	Extension   map[string]interface{} `json:"extension"`
+	Description string                 `json:"description"`
 }
 
 // GetAppsByIDsResp GetAppsByIDsResp
