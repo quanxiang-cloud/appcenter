@@ -40,12 +40,15 @@ import (
 
 const (
 	releaseStatus     = 1
+	unReady           = 0
 	unReleaseStatus   = -1
 	importingStatus   = -2
 	errorImportStatus = -3
-	appCenterRedis    = "appCenter:admins:"
-	randNumber        = 5
-	preDelete         = "preDelete"
+	errorInitialize   = -4
+
+	appCenterRedis = "appCenter:admins:"
+	randNumber     = 5
+	preDelete      = "preDelete"
 
 	changeAdminKey   = "appCenter:admins:change"
 	changeAdminValue = "lockValue"
@@ -64,6 +67,8 @@ type app struct {
 	flowAPI           client.Flow
 	chaosAPI          client.Chaos
 	CompatibleVersion string
+
+	initServerBits int
 }
 
 // NewApp return a app instance
@@ -79,6 +84,8 @@ func NewApp(c *config.Configs, db *gorm.DB) logic.AppCenter {
 		flowAPI:           client.NewFlow(c),
 		chaosAPI:          client.NewChaos(c),
 		CompatibleVersion: c.CompatibleVersion,
+
+		initServerBits: c.InitServerBits,
 	}
 }
 func (a *app) AdminPageList(ctx context.Context, rq *req.SelectListAppCenter) (*page.Page, error) {
@@ -152,7 +159,8 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 	app.UpdateBy = rq.CreateBy
 	app.CreateTime = nowUnix
 	app.UpdateTime = nowUnix
-	app.UseStatus = unReleaseStatus
+	app.UseStatus = unReady
+	app.Server = a.initServerBits
 	app.AppSign = rq.AppSign
 	tx := a.DB.Begin()
 	err := a.app.Insert(&app, tx)
@@ -173,21 +181,8 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 	}
 	tx.Commit()
 
-	// // init server
-	// scopes := make([]*client.ScopesVO, 0)
-	// scope := &client.ScopesVO{
-	// 	ID:   rq.CreateBy,
-	// 	Type: 1,
-	// 	Name: rq.CreateByName,
-	// }
-	// scopes = append(scopes, scope)
-	// _, err = a.polyAPI.RequestPath(ctx, id, name, description, perInitTypes, scopes)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// TODO: init content
-	a.chaosAPI.Init(ctx, id, rq.CreateBy, rq.CreateByName, 0)
+	// init server
+	a.chaosAPI.Init(ctx, id, rq.CreateBy, rq.CreateByName, app.Server)
 
 	return &center, nil
 }
@@ -599,4 +594,20 @@ func (a *app) CheckAppAccess(ctx context.Context, rq *req.CheckAppAccessReq) (*r
 	return &resp.CheckAppAccessResp{
 		IsAuthority: appIDCount > 0,
 	}, nil
+}
+
+func (a *app) InitCallBack(ctx context.Context, rq *req.InitCallBackReq) (*resp.InitCallBackResp, error) {
+	status := &req.UpdateAppCenter{
+		ID:        rq.ID,
+		UpdateBy:  rq.UpdateBy,
+		UseStatus: errorInitialize,
+	}
+
+	if rq.Status {
+		status.UseStatus = unReleaseStatus
+	}
+	if err := a.UpdateStatus(ctx, status); err != nil {
+		return nil, err
+	}
+	return &resp.InitCallBackResp{}, nil
 }

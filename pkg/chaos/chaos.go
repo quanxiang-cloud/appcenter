@@ -29,9 +29,8 @@ func (p *Chaos) Handle(c *gin.Context) {
 		resp.Format(nil, error2.NewErrorWithString(error2.ErrParams, err.Error()))
 		return
 	}
-	msg.CTX = header.MutateContext(c)
 
-	if err := p.handler.Put(msg); err != nil {
+	if err := p.handler.Put(header.MutateContext(c), msg); err != nil {
 		resp.Format(nil, error2.NewErrorWithString(error2.ErrParams, err.Error()))
 		return
 	}

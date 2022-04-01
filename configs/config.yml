@@ -14,6 +14,8 @@ mysql:
   password: 
   log: true
 
+# initialized server
+initServerBits: 1
 
 
 #  -------------------- log --------------------

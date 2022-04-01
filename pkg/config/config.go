@@ -43,8 +43,11 @@ type Configs struct {
 	InnerHost         InnerHostConfig `yaml:"innerHost"`
 	CompatibleVersion string          `yaml:"compatibleVersion"`
 
+	InitServerBits int `yaml:"initServerBits"`
+
 	WorkLoad     int
 	MaximumRetry int
+	WaitTime     int
 	KV           *cabinet.KV
 }
 

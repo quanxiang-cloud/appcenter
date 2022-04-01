@@ -26,6 +26,7 @@ var (
 
 	workLoad     = flag.Int("workLoad", 8, "WorkLoad is the amount of goroutine notifying other server to init.")
 	maximumRetry = flag.Int("maximum-retry", 3, "MaximumRetry is the amount of retrying to call init func.")
+	waitTime     = flag.Int("waitTime", 2, "WaitTime is the duration of retrying to do task.")
 
 	clientTimeout = flag.Int("clientTimeout", 20, "ClientTimeout is the deadline when dialing other server.")
 	maxIdleConns  = flag.Int("maxIdleConns", 10, "MaxIdleConns controls the maximum number of idle (keep-alive) connections across all hosts.")
@@ -52,6 +53,7 @@ func main() {
 		},
 		WorkLoad:     *workLoad,
 		MaximumRetry: *maximumRetry,
+		WaitTime:     *waitTime,
 		KV:           kv,
 	}
 

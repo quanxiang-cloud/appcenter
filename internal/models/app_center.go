@@ -33,7 +33,8 @@ type AppCenter struct {
 	CreateTime int64  `gorm:"column:create_time;type:bigint; " json:"createTime"`
 	UpdateTime int64  `gorm:"column:update_time;type:bigint; " json:"updateTime"`
 	UseStatus  int    `gorm:"column:use_status;"  json:"useStatus"` //published1，unpublished-1
-	DelFlag    int64  `gorm:"column:del_flag;"  json:"delFlag"`     //delete marker 0 not deleted 1 deleted
+	Server     int    `gorm:"column:server;" json:"server"`
+	DelFlag    int64  `gorm:"column:del_flag;"  json:"delFlag"` //delete marker 0 not deleted 1 deleted
 	// The default time is five days after you click delete.
 	// If you click delete in the recycle bin, the delete time changes to the current time
 	DeleteTime int64  `gorm:"column:delete_time;type:bigint; " json:"deleteTime"` //default remove

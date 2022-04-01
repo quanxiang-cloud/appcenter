@@ -85,6 +85,7 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 		k.POST("/checkVersion", app.CheckVersion)
 		k.POST("/exportApp", app.ExportApp)
 		k.POST("/importApp", app.CreateImportApp)
+		k.POST("/initCallBack", app.InitCallBack)
 	}
 
 	template := NewTemplate(c, db)
@@ -118,7 +119,7 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 		return nil, err
 	}
 
-	initHandler := handle.New(c.WorkLoad, c.MaximumRetry, b, log)
+	initHandler := handle.New(c.WorkLoad, c.MaximumRetry, c.WaitTime, b, log)
 	// TODO: set executors
 	initHandler.SetTaskExecutors(&exec.PolyExecutor{
 		Client:  client.New(c.InternalNet),

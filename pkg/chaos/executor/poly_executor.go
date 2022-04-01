@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/define"
@@ -36,7 +37,7 @@ type ScopesVO struct {
 
 type PolyResp struct{}
 
-func (s *PolyExecutor) Exec(m define.Msg) error {
+func (s *PolyExecutor) Exec(ctx context.Context, m define.Msg) error {
 	req := &PolyReq{
 		AppID: m.AppID,
 		Scopes: []*ScopesVO{
@@ -52,7 +53,7 @@ func (s *PolyExecutor) Exec(m define.Msg) error {
 	}
 
 	resp := &PolyResp{}
-	err := client.POST(m.CTX, &s.Client, s.PolyURL, req, resp)
+	err := client.POST(ctx, &s.Client, s.PolyURL, req, resp)
 	if err != nil {
 		return err
 	}
@@ -60,5 +61,5 @@ func (s *PolyExecutor) Exec(m define.Msg) error {
 }
 
 func (*PolyExecutor) Bit() int {
-	return 1 << 0
+	return define.BIT_POLYAPI
 }

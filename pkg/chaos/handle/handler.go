@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -9,56 +10,64 @@ import (
 	"github.com/quanxiang-cloud/cabin/logger"
 )
 
-type handler func(define.Msg, int) error
+type data struct {
+	msg   define.Msg
+	ctx   context.Context
+	retry int
+	time  int64
+}
+
+type handler func(context.Context, define.Msg) error
 
 func buildExec(executors []Executor) handler {
-	return func(msg define.Msg, maximum int) (err error) {
-		var count = 0
-
-	RETRY:
-		for count < maximum {
-			for _, e := range executors {
-				if (msg.Content & e.Bit()) == e.Bit() {
-					if err = e.Exec(msg); err != nil {
-						count++
-						continue RETRY
-					}
+	return func(ctx context.Context, msg define.Msg) error {
+		for _, e := range executors {
+			if (msg.Content & e.Bit()) == e.Bit() {
+				if err := e.Exec(ctx, msg); err != nil {
+					return err
 				}
 			}
-			return
 		}
-		return
+		return nil
 	}
 }
 
 type InitHandler struct {
 	Stopped bool
 
-	task          chan define.Msg
-	taskHandler   handler
-	resultHandler handler
-	workload      int
-	maximumRetry  int
+	task           chan data
+	taskHandler    handler
+	successHandler handler
+	failureHandler handler
+	workload       int
+	maximumRetry   int
+	waitTime       int
 
 	broker *broker.Broker
 
 	log logger.AdaptedLogger
 }
 
-func New(workload, maximumRetry int, broker *broker.Broker, log logger.AdaptedLogger) *InitHandler {
+func New(workload, maximumRetry, waitTime int, broker *broker.Broker, log logger.AdaptedLogger) *InitHandler {
 	return &InitHandler{
-		task:         make(chan define.Msg, workload*8),
+		task:         make(chan data, workload*8),
 		Stopped:      false,
 		broker:       broker,
 		log:          log,
 		workload:     workload,
 		maximumRetry: maximumRetry,
+		waitTime:     waitTime,
 	}
 }
 
-func (ih *InitHandler) Put(msg define.Msg) error {
+func (ih *InitHandler) Put(ctx context.Context, msg define.Msg) error {
 	if !ih.Stopped {
-		ih.task <- msg
+		ih.task <- data{
+			msg:   msg,
+			ctx:   ctx,
+			retry: 0,
+			time:  time.Now().Unix(),
+		}
 		return nil
 	}
 	return fmt.Errorf("handler is stopping")
@@ -67,14 +76,14 @@ func (ih *InitHandler) Put(msg define.Msg) error {
 func (ih *InitHandler) Run() {
 	if ih.taskHandler == nil {
 		ih.log.Warnf("[TaskHandler] taskHandler is a empty func")
-		ih.taskHandler = func(define.Msg, int) error {
+		ih.taskHandler = func(context.Context, define.Msg) error {
 			ih.log.Warnf("[TaskHandler] empty func is called")
 			return nil
 		}
 	}
-	if ih.resultHandler == nil {
+	if ih.successHandler == nil {
 		ih.log.Warnf("[ResultHandler] resultHandler is a empty func")
-		ih.resultHandler = func(define.Msg, int) error {
+		ih.successHandler = func(context.Context, define.Msg) error {
 			ih.log.Warnf("[ResultHandler] empty func is called")
 			return nil
 		}
@@ -89,8 +98,12 @@ func (ih *InitHandler) SetTaskExecutors(executors ...Executor) {
 	ih.taskHandler = buildExec(executors)
 }
 
-func (ih *InitHandler) SetResultExecutors(executors ...Executor) {
-	ih.resultHandler = buildExec(executors)
+func (ih *InitHandler) SetSuccessExecutors(executors ...Executor) {
+	ih.successHandler = buildExec(executors)
+}
+
+func (ih *InitHandler) SetFailureExecutors(executors ...Executor) {
+	ih.failureHandler = buildExec(executors)
 }
 
 func (ih *InitHandler) withCancel() {
@@ -107,14 +120,29 @@ func (ih *InitHandler) withCancel() {
 
 func (ih *InitHandler) run() {
 	for {
-		msg := <-ih.task
-		if err := ih.taskHandler(msg, ih.maximumRetry); err != nil {
-			ih.log.Errorf("[TaskHandler] failed to init-server: %s", err.Error())
-			continue
-		}
+		data := <-ih.task
 
-		if err := ih.resultHandler(msg, ih.maximumRetry); err != nil {
-			ih.log.Errorf("[resultHandler] failed to call-back: %s", err.Error())
+		if data.time <= time.Now().Unix() {
+			if err := ih.taskHandler(data.ctx, data.msg); err != nil {
+				ih.log.Errorf("[TaskHandler] failed to init-server: %s", err.Error())
+
+				data.retry += 1
+				if data.retry < ih.maximumRetry {
+					data.time = time.Now().Add(time.Duration(data.retry*ih.waitTime) * time.Minute).Unix()
+					ih.task <- data
+				} else {
+					if err := ih.failureHandler(data.ctx, data.msg); err != nil {
+						ih.log.Errorf("[failureHandler] failed to do: %s", err.Error())
+					}
+				}
+				continue
+			}
+
+			if err := ih.successHandler(data.ctx, data.msg); err != nil {
+				ih.log.Errorf("[resultHandler] failed to do: %s", err.Error())
+			}
+		} else {
+			ih.task <- data
 		}
 	}
 }
