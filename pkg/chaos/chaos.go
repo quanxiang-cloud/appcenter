@@ -6,6 +6,7 @@ import (
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/handle"
 	error2 "github.com/quanxiang-cloud/cabin/error"
 	"github.com/quanxiang-cloud/cabin/logger"
+	"github.com/quanxiang-cloud/cabin/tailormade/header"
 	"github.com/quanxiang-cloud/cabin/tailormade/resp"
 )
 
@@ -28,6 +29,7 @@ func (p *Chaos) Handle(c *gin.Context) {
 		resp.Format(nil, error2.NewErrorWithString(error2.ErrParams, err.Error()))
 		return
 	}
+	msg.CTX = header.MutateContext(c)
 
 	if err := p.handler.Put(msg); err != nil {
 		resp.Format(nil, error2.NewErrorWithString(error2.ErrParams, err.Error()))

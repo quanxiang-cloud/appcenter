@@ -20,10 +20,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/quanxiang-cloud/appcenter/pkg/broker"
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos"
+	exec "github.com/quanxiang-cloud/appcenter/pkg/chaos/executor"
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/handle"
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/appcenter/pkg/probe"
 	"github.com/quanxiang-cloud/cabin/logger"
+	"github.com/quanxiang-cloud/cabin/tailormade/client"
 	"github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	ginlog "github.com/quanxiang-cloud/cabin/tailormade/gin"
 )
@@ -118,7 +120,10 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 
 	initHandler := handle.New(c.WorkLoad, c.MaximumRetry, b, log)
 	// TODO: set executors
-	// initHandler.SetTaskExecutors()
+	initHandler.SetTaskExecutors(&exec.PolyExecutor{
+		Client:  client.New(c.InternalNet),
+		PolyURL: c.KV.Get(exec.POLY_URL),
+	})
 	// initHandler.SetResultExecutors()
 
 	p := chaos.New(initHandler, log)

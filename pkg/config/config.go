@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/quanxiang-cloud/appcenter/pkg/cabinet"
 	"github.com/quanxiang-cloud/cabin/tailormade/client"
 	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	redis2 "github.com/quanxiang-cloud/cabin/tailormade/db/redis"
@@ -44,6 +45,7 @@ type Configs struct {
 
 	WorkLoad     int
 	MaximumRetry int
+	KV           *cabinet.KV
 }
 
 // InnerHostConfig InnerHostConfig

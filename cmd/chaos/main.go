@@ -9,8 +9,10 @@ import (
 
 	"github.com/quanxiang-cloud/appcenter/api/restful"
 	"github.com/quanxiang-cloud/appcenter/pkg/broker"
+	"github.com/quanxiang-cloud/appcenter/pkg/cabinet"
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/cabin/logger"
+	"github.com/quanxiang-cloud/cabin/tailormade/client"
 )
 
 var (
@@ -24,9 +26,15 @@ var (
 
 	workLoad     = flag.Int("workLoad", 8, "WorkLoad is the amount of goroutine notifying other server to init.")
 	maximumRetry = flag.Int("maximum-retry", 3, "MaximumRetry is the amount of retrying to call init func.")
+
+	clientTimeout = flag.Int("clientTimeout", 20, "ClientTimeout is the deadline when dialing other server.")
+	maxIdleConns  = flag.Int("maxIdleConns", 10, "MaxIdleConns controls the maximum number of idle (keep-alive) connections across all hosts.")
 )
 
 func main() {
+	kv := cabinet.New()
+	flag.Parse()
+
 	config := &config.Configs{
 		Model: *model,
 		HTTPServer: config.HTTPServer{
@@ -38,8 +46,13 @@ func main() {
 		Log: logger.Config{
 			Level: *logLevel,
 		},
+		InternalNet: client.Config{
+			Timeout:      time.Duration(*clientTimeout),
+			MaxIdleConns: *maxIdleConns,
+		},
 		WorkLoad:     *workLoad,
 		MaximumRetry: *maximumRetry,
+		KV:           kv,
 	}
 
 	log := logger.New(&config.Log)

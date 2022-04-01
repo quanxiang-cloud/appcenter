@@ -3,7 +3,7 @@ package define
 import "context"
 
 type Msg struct {
-	ctx context.Context
+	CTX context.Context
 
 	AppID    string `json:"appID"`
 	CreateBy string `json:"createBy"`
