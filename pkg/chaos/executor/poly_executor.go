@@ -35,7 +35,7 @@ type ScopesVO struct {
 	Name string `json:"name"`
 }
 
-type PolyResp struct{}
+type PolyResp = define.Response
 
 func (s *PolyExecutor) Exec(ctx context.Context, m define.Msg) error {
 	req := &PolyReq{

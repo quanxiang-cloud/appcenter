@@ -120,12 +120,24 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 	}
 
 	initHandler := handle.New(c.WorkLoad, c.MaximumRetry, c.WaitTime, b, log)
+
 	// TODO: set executors
 	initHandler.SetTaskExecutors(&exec.PolyExecutor{
 		Client:  client.New(c.InternalNet),
 		PolyURL: c.KV.Get(exec.POLY_URL),
 	})
-	// initHandler.SetResultExecutors()
+	initHandler.SetSuccessExecutors(&exec.SuccessExecutor{
+		BaseExecutor: exec.BaseExecutor{
+			Client:       client.New(c.InternalNet),
+			AppCenterURL: c.KV.Get(exec.APP_CENTER_URL),
+		},
+	})
+	initHandler.SetFailureExecutors(&exec.FailureExecutor{
+		BaseExecutor: exec.BaseExecutor{
+			Client:       client.New(c.InternalNet),
+			AppCenterURL: c.KV.Get(exec.APP_CENTER_URL),
+		},
+	})
 
 	p := chaos.New(initHandler, log)
 	engine.POST("/init", p.Handle)
