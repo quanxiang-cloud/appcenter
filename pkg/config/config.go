@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/quanxiang-cloud/appcenter/pkg/cabinet"
 	"github.com/quanxiang-cloud/cabin/tailormade/client"
 	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	redis2 "github.com/quanxiang-cloud/cabin/tailormade/db/redis"
@@ -41,6 +42,13 @@ type Configs struct {
 	Redis             redis2.Config   `yaml:"redis"`
 	InnerHost         InnerHostConfig `yaml:"innerHost"`
 	CompatibleVersion string          `yaml:"compatibleVersion"`
+
+	InitServerBits int `yaml:"initServerBits"`
+
+	WorkLoad     int
+	MaximumRetry int
+	WaitTime     int
+	KV           *cabinet.KV
 }
 
 // InnerHostConfig InnerHostConfig

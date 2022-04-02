@@ -18,9 +18,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/quanxiang-cloud/appcenter/pkg/broker"
+	"github.com/quanxiang-cloud/appcenter/pkg/chaos"
+	exec "github.com/quanxiang-cloud/appcenter/pkg/chaos/executor"
+	"github.com/quanxiang-cloud/appcenter/pkg/chaos/handle"
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/appcenter/pkg/probe"
 	"github.com/quanxiang-cloud/cabin/logger"
+	"github.com/quanxiang-cloud/cabin/tailormade/client"
 	"github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	ginlog "github.com/quanxiang-cloud/cabin/tailormade/gin"
 )
@@ -80,6 +85,7 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 		k.POST("/checkVersion", app.CheckVersion)
 		k.POST("/exportApp", app.ExportApp)
 		k.POST("/importApp", app.CreateImportApp)
+		k.POST("/initCallBack", app.InitCallBack)
 	}
 
 	template := NewTemplate(c, db)
@@ -105,6 +111,42 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 	}
 	r.probe()
 	return r, nil
+}
+
+// NewInitRouter init router
+func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger) (*Router, error) {
+	engine, err := newRouter(c)
+	if err != nil {
+		return nil, err
+	}
+
+	initHandler := handle.New(c.WorkLoad, c.MaximumRetry, c.WaitTime, b, log)
+
+	// TODO: set executors
+	initHandler.SetTaskExecutors(&exec.PolyExecutor{
+		Client:  client.New(c.InternalNet),
+		PolyURL: c.KV.Get(exec.PolyURL),
+	})
+	initHandler.SetSuccessExecutors(&exec.SuccessExecutor{
+		BaseExecutor: exec.BaseExecutor{
+			Client:       client.New(c.InternalNet),
+			AppCenterURL: c.KV.Get(exec.AppCenterURL),
+		},
+	})
+	initHandler.SetFailureExecutors(&exec.FailureExecutor{
+		BaseExecutor: exec.BaseExecutor{
+			Client:       client.New(c.InternalNet),
+			AppCenterURL: c.KV.Get(exec.AppCenterURL),
+		},
+	})
+
+	p := chaos.New(initHandler, log)
+	engine.POST("/init", p.Handle)
+
+	return &Router{
+		c:      c,
+		engine: engine,
+	}, nil
 }
 
 func newRouter(c *config.Configs) (*gin.Engine, error) {

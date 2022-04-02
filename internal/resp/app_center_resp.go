@@ -88,3 +88,7 @@ type ErrorImportResp struct {
 // CheckImportVersionResp CheckImportVersionResp
 type CheckImportVersionResp struct {
 }
+
+// InitCallBackResp InitCallBackResp
+type InitCallBackResp struct {
+}

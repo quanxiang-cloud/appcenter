@@ -13,7 +13,6 @@ COPY --from=certs /etc/ssl/certs /etc/ssl/certs
 WORKDIR /app-center
 COPY --from=builder ./build/app-center ./cmd/
 
-
 EXPOSE 80
 
 ENTRYPOINT ["./cmd/app-center","-config=/configs/config.yml"]

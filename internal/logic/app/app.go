@@ -40,15 +40,15 @@ import (
 
 const (
 	releaseStatus     = 1
+	unReady           = 0
 	unReleaseStatus   = -1
 	importingStatus   = -2
 	errorImportStatus = -3
-	appCenterRedis    = "appCenter:admins:"
-	perInitTypes      = 1
-	name              = "全部权限"
-	description       = "系统默认角色"
-	randNumber        = 5
-	preDelete         = "preDelete"
+	errorInitialize   = -4
+
+	appCenterRedis = "appCenter:admins:"
+	randNumber     = 5
+	preDelete      = "preDelete"
 
 	changeAdminKey   = "appCenter:admins:change"
 	changeAdminValue = "lockValue"
@@ -65,7 +65,10 @@ type app struct {
 	redisClient       *redis.ClusterClient
 	polyAPI           client.PolyAPI
 	flowAPI           client.Flow
+	chaosAPI          client.Chaos
 	CompatibleVersion string
+
+	initServerBits int
 }
 
 // NewApp return a app instance
@@ -79,7 +82,10 @@ func NewApp(c *config.Configs, db *gorm.DB) logic.AppCenter {
 		polyAPI:           client.NewPolyAPI(c),
 		redisClient:       redis2.ClusterClient,
 		flowAPI:           client.NewFlow(c),
+		chaosAPI:          client.NewChaos(c),
 		CompatibleVersion: c.CompatibleVersion,
+
+		initServerBits: c.InitServerBits,
 	}
 }
 func (a *app) AdminPageList(ctx context.Context, rq *req.SelectListAppCenter) (*page.Page, error) {
@@ -157,7 +163,8 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 	app.UpdateBy = rq.CreateBy
 	app.CreateTime = nowUnix
 	app.UpdateTime = nowUnix
-	app.UseStatus = unReleaseStatus
+	app.UseStatus = unReady
+	app.Server = a.initServerBits
 	app.AppSign = rq.AppSign
 	app.Extension = getExtension(rq.Extension)
 	app.Description = rq.Description
@@ -179,18 +186,10 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 		CreateBy: rq.CreateBy,
 	}
 	tx.Commit()
+
 	// init server
-	scopes := make([]*client.ScopesVO, 0)
-	scope := &client.ScopesVO{
-		ID:   rq.CreateBy,
-		Type: 1,
-		Name: rq.CreateByName,
-	}
-	scopes = append(scopes, scope)
-	_, err = a.polyAPI.RequestPath(ctx, id, name, description, perInitTypes, scopes)
-	if err != nil {
-		return nil, err
-	}
+	a.chaosAPI.Init(ctx, id, rq.CreateBy, rq.CreateByName, app.Server)
+
 	return &center, nil
 }
 
@@ -616,4 +615,20 @@ func getExtension(data map[string]interface{}) map[string]interface{} {
 		return map[string]interface{}{}
 	}
 	return data
+}
+
+func (a *app) InitCallBack(ctx context.Context, rq *req.InitCallBackReq) (*resp.InitCallBackResp, error) {
+	status := &req.UpdateAppCenter{
+		ID:        rq.ID,
+		UpdateBy:  rq.UpdateBy,
+		UseStatus: errorInitialize,
+	}
+
+	if rq.Status {
+		status.UseStatus = unReleaseStatus
+	}
+	if err := a.UpdateStatus(ctx, status); err != nil {
+		return nil, err
+	}
+	return &resp.InitCallBackResp{}, nil
 }

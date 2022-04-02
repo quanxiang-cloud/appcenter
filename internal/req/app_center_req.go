@@ -136,3 +136,11 @@ type ErrorImportReq struct {
 type CheckImportVersionReq struct {
 	Version string `json:"version"`
 }
+
+// InitCallBackReq InitCallBackReq
+type InitCallBackReq struct {
+	ID           string `json:"id"`
+	UpdateBy     string `json:"-"`
+	UpdateByName string `json:"-"`
+	Status       bool   `json:"status"`
+}
