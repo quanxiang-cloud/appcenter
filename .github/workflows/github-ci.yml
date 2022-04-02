@@ -1,7 +1,7 @@
 name: appcenter
 env:
   PROJECT_NAME: app-center
-  IMAGE_PREFIX: dockerhub.qingcloud.com/lowcode
+  IMAGE_PREFIX: qxcr.xyz/lowcode
   DATE: $(date "+%Y%m%d")
 on: [ push, pull_request ]
 jobs:
@@ -65,4 +65,4 @@ jobs:
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - run: echo IMAGE_TAG="v${{ env.DATE }}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_NAME }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
+      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_NAME }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=$IMAGE_PREFIX -n lowcode
