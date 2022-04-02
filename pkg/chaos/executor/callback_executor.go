@@ -8,10 +8,12 @@ import (
 	"github.com/quanxiang-cloud/cabin/tailormade/client"
 )
 
+// key of AppCenterURl
 const (
-	APP_CENTER_URL = "appcenterurl"
+	AppCenterURL = "appcenterurl"
 )
 
+// BaseExecutor BaseExecutor
 type BaseExecutor struct {
 	Client       http.Client
 	AppCenterURL string
@@ -19,6 +21,7 @@ type BaseExecutor struct {
 	status bool
 }
 
+// Exec Exec
 func (b *BaseExecutor) Exec(ctx context.Context, m define.Msg) error {
 	req := &struct {
 		ID     string `json:"id"`
@@ -36,23 +39,28 @@ func (b *BaseExecutor) Exec(ctx context.Context, m define.Msg) error {
 	return nil
 }
 
+// Bit Bit
 func (b *BaseExecutor) Bit() int {
-	return define.BIT_AWAYS
+	return define.BitAways
 }
 
+// SuccessExecutor SuccessExecutor
 type SuccessExecutor struct {
 	BaseExecutor
 }
 
+// Exec Exec
 func (s *SuccessExecutor) Exec(ctx context.Context, m define.Msg) error {
 	s.status = true
 	return s.BaseExecutor.Exec(ctx, m)
 }
 
+// FailureExecutor FailureExecutor
 type FailureExecutor struct {
 	BaseExecutor
 }
 
+// Exec Exec
 func (f *FailureExecutor) Exec(ctx context.Context, m define.Msg) error {
 	f.status = false
 	return f.BaseExecutor.Exec(ctx, m)

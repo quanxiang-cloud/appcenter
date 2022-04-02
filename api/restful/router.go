@@ -113,6 +113,7 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 	return r, nil
 }
 
+// NewInitRouter init router
 func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger) (*Router, error) {
 	engine, err := newRouter(c)
 	if err != nil {
@@ -124,18 +125,18 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 	// TODO: set executors
 	initHandler.SetTaskExecutors(&exec.PolyExecutor{
 		Client:  client.New(c.InternalNet),
-		PolyURL: c.KV.Get(exec.POLY_URL),
+		PolyURL: c.KV.Get(exec.PolyURL),
 	})
 	initHandler.SetSuccessExecutors(&exec.SuccessExecutor{
 		BaseExecutor: exec.BaseExecutor{
 			Client:       client.New(c.InternalNet),
-			AppCenterURL: c.KV.Get(exec.APP_CENTER_URL),
+			AppCenterURL: c.KV.Get(exec.AppCenterURL),
 		},
 	})
 	initHandler.SetFailureExecutors(&exec.FailureExecutor{
 		BaseExecutor: exec.BaseExecutor{
 			Client:       client.New(c.InternalNet),
-			AppCenterURL: c.KV.Get(exec.APP_CENTER_URL),
+			AppCenterURL: c.KV.Get(exec.AppCenterURL),
 		},
 	})
 

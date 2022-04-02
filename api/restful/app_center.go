@@ -514,6 +514,7 @@ func isSuperRole(c *gin.Context) bool {
 	return false
 }
 
+// InitCallBack call back
 func (a *AppCenter) InitCallBack(c *gin.Context) {
 	ctx := header2.MutateContext(c)
 	rq := &req.InitCallBackReq{}

@@ -10,11 +10,13 @@ import (
 	"github.com/quanxiang-cloud/cabin/tailormade/resp"
 )
 
+// Chaos Chaos
 type Chaos struct {
 	log     logger.AdaptedLogger
 	handler *handle.InitHandler
 }
 
+// New New
 func New(handler *handle.InitHandler, log logger.AdaptedLogger) *Chaos {
 	handler.Run()
 	return &Chaos{
@@ -23,6 +25,7 @@ func New(handler *handle.InitHandler, log logger.AdaptedLogger) *Chaos {
 	}
 }
 
+// Handle Handle
 func (p *Chaos) Handle(c *gin.Context) {
 	msg := define.Msg{}
 	if err := c.ShouldBind(&msg); err != nil {

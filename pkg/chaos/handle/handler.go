@@ -32,6 +32,7 @@ func buildExec(executors []Executor) handler {
 	}
 }
 
+// InitHandler InitHandler
 type InitHandler struct {
 	Stopped bool
 
@@ -48,6 +49,7 @@ type InitHandler struct {
 	log logger.AdaptedLogger
 }
 
+// New New
 func New(workload, maximumRetry, waitTime int, broker *broker.Broker, log logger.AdaptedLogger) *InitHandler {
 	return &InitHandler{
 		task:         make(chan data, workload*8),
@@ -60,6 +62,7 @@ func New(workload, maximumRetry, waitTime int, broker *broker.Broker, log logger
 	}
 }
 
+// Put Put
 func (ih *InitHandler) Put(ctx context.Context, msg define.Msg) error {
 	if !ih.Stopped {
 		ih.task <- data{
@@ -73,6 +76,7 @@ func (ih *InitHandler) Put(ctx context.Context, msg define.Msg) error {
 	return fmt.Errorf("handler is stopping")
 }
 
+// Run Run
 func (ih *InitHandler) Run() {
 	if ih.taskHandler == nil {
 		ih.log.Warnf("[TaskHandler] taskHandler is a empty func")
@@ -94,14 +98,17 @@ func (ih *InitHandler) Run() {
 	ih.withCancel()
 }
 
+// SetTaskExecutors SetTaskExecutors
 func (ih *InitHandler) SetTaskExecutors(executors ...Executor) {
 	ih.taskHandler = buildExec(executors)
 }
 
+// SetSuccessExecutors SetSuccessExecutors
 func (ih *InitHandler) SetSuccessExecutors(executors ...Executor) {
 	ih.successHandler = buildExec(executors)
 }
 
+// SetFailureExecutors SetFailureExecutors
 func (ih *InitHandler) SetFailureExecutors(executors ...Executor) {
 	ih.failureHandler = buildExec(executors)
 }
@@ -126,7 +133,7 @@ func (ih *InitHandler) run() {
 			if err := ih.taskHandler(data.ctx, data.msg); err != nil {
 				ih.log.Errorf("[TaskHandler] failed to init-server: %s", err.Error())
 
-				data.retry += 1
+				data.retry++
 				if data.retry < ih.maximumRetry {
 					data.time = time.Now().Add(time.Duration(data.retry*ih.waitTime) * time.Minute).Unix()
 					ih.task <- data
