@@ -312,7 +312,7 @@ func (a *AppCenter) UserList(c *gin.Context) {
 	}
 	rq.UserID = c.GetHeader(_userID)
 	departments := strings.Split(c.GetHeader(_departmentID), ",")
-	rq.DepID = departments[len(departments)-1]
+	rq.DepID = departments[0]
 	res, err := a.appCenter.UserPageList(ctx, &rq)
 
 	if err != nil {
