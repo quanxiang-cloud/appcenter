@@ -40,11 +40,11 @@ import (
 
 const (
 	releaseStatus     = 1
-	unReady           = 0
 	unReleaseStatus   = -1
 	importingStatus   = -2
 	errorImportStatus = -3
 	errorInitialize   = -4
+	unReady           = -5
 
 	appCenterRedis = "appCenter:admins:"
 	randNumber     = 5
@@ -72,8 +72,8 @@ type app struct {
 }
 
 // NewApp return a app instance
-func NewApp(c *config.Configs, db *gorm.DB) logic.AppCenter {
-	return &app{
+func NewApp(c *config.Configs, db *gorm.DB) (logic.AppCenter, error) {
+	appcenter := &app{
 		app:               mysql.NewAppCenterRepo(),
 		appUser:           mysql.NewAppUserRelationRepo(),
 		appScope:          mysql.NewAppScopeRepo(),
@@ -87,7 +87,33 @@ func NewApp(c *config.Configs, db *gorm.DB) logic.AppCenter {
 
 		initServerBits: c.InitServerBits,
 	}
+
+	logger.Logger.Infof("app-center init")
+	err := appcenter.init()
+	if err != nil {
+		return nil, err
+	}
+	logger.Logger.Info("init done!")
+	return appcenter, nil
 }
+
+func (a *app) init() error {
+	apps, err := a.app.SelectByStatus(a.DB, unReady)
+	if err != nil {
+		return err
+	}
+	logger.Logger.Infof("%d apps should be inited", len(apps))
+	req := client.InitReq{}
+	for _, app := range apps {
+		req = append(req, client.Msg{
+			AppID:    app.ID,
+			CreateBy: app.CreateBy,
+			Content:  a.initServerBits,
+		})
+	}
+	return a.chaosAPI.Init(context.Background(), &req)
+}
+
 func (a *app) AdminPageList(ctx context.Context, rq *req.SelectListAppCenter) (*page.Page, error) {
 	list, total := a.app.SelectByPage(rq.UserID, rq.AppName, rq.UseStatus, rq.Page, rq.Limit, true, a.DB)
 	if len(list) > 0 {
@@ -188,9 +214,13 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 	tx.Commit()
 
 	// init server
-	a.chaosAPI.Init(ctx, id, rq.CreateBy, rq.CreateByName, app.Server)
+	err = a.chaosAPI.Init(ctx, &client.InitReq{{
+		AppID:    app.ID,
+		CreateBy: app.CreateBy,
+		Content:  app.Server,
+	}})
 
-	return &center, nil
+	return &center, err
 }
 
 func (a *app) Update(ctx context.Context, rq *req.UpdateAppCenter) error {

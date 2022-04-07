@@ -17,7 +17,6 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/quanxiang-cloud/appcenter/pkg/cabinet"
 	"github.com/quanxiang-cloud/cabin/tailormade/client"
 	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	redis2 "github.com/quanxiang-cloud/cabin/tailormade/db/redis"
@@ -45,10 +44,11 @@ type Configs struct {
 
 	InitServerBits int `yaml:"initServerBits"`
 
-	WorkLoad     int
-	MaximumRetry int
-	WaitTime     int
-	KV           *cabinet.KV
+	WorkLoad     int               `yaml:"workLoad"`
+	MaximumRetry int               `yaml:"maximumRetry"`
+	WaitTime     int               `yaml:"waitTime"`
+	Sync         bool              `yaml:"sync"`
+	KV           map[string]string `yaml:"kv"`
 }
 
 // InnerHostConfig InnerHostConfig

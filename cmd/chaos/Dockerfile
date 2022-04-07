@@ -15,4 +15,4 @@ COPY --from=builder ./build/chaos ./cmd/
 
 EXPOSE 6666
 
-ENTRYPOINT ["./cmd/chaos", "--kv", "polyurl=http://polyapi:9090/api/v1/polyapi/inner/request/system/poly/permissionInit.p", "--kv", "appcenterurl=http://localhost:80/api/v1/app-center/initCallBack"]
+ENTRYPOINT ["./cmd/chaos", "-config=/configs/config.yaml"]

@@ -16,6 +16,7 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/json"
+
 	"gorm.io/gorm"
 )
 
@@ -77,4 +78,5 @@ type AppRepo interface {
 	UpdateDelFlag(db *gorm.DB, id string, deleteTime int64) error
 	GetDeleteList(db *gorm.DB, deleteTime int64) ([]*AppCenter, error)
 	SelectByAppSign(db *gorm.DB, appSign string) *AppCenter
+	SelectByStatus(db *gorm.DB, status int) ([]*AppCenter, error)
 }
