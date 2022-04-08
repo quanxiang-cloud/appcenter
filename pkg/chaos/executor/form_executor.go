@@ -21,7 +21,7 @@ const (
 )
 
 const (
-	perInitTypes = 1
+	perInitTypes = 0
 	name         = "全部权限"
 	description  = "系统默认角色"
 )
