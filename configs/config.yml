@@ -24,17 +24,15 @@ compatibleVersion: "0.7.3"
 # ------------------------------------ Common -----------------------------------
 redis:
   addrs:
-    - "192.168.200.18:6379"
-    - "192.168.200.19:6379"
-    - "192.168.200.20:6379"
+    - "127.0.0.1:6379"
   username:
   password:
 
 mysql:
   db: app_center
-  host: 192.168.200.18:3306
+  host: 127.0.0.1:3306
   user: root
-  password: uyWxtvt6gCOy3VPLB3rTpa0rQ
+  password: pwd
   log: true
 
 # comply with zap log specification

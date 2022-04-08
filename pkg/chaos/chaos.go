@@ -27,6 +27,8 @@ func New(handler *handle.InitHandler, log logger.AdaptedLogger) *Chaos {
 	return chaos
 }
 
+type initResp struct{}
+
 // Handle Handle
 func (p *Chaos) Handle(c *gin.Context) {
 	msgs := make([]define.Msg, 0)
@@ -42,4 +44,5 @@ func (p *Chaos) Handle(c *gin.Context) {
 			return
 		}
 	}
+	resp.Format(initResp{}, nil).Context(c)
 }

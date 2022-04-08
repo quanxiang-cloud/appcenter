@@ -111,6 +111,7 @@ func (a *app) init() error {
 			Content:  a.initServerBits,
 		})
 	}
+	// ctx := context.WithValue(context.Background(), "Request-Id", "appcenter-init")
 	return a.chaosAPI.Init(context.Background(), &req)
 }
 
