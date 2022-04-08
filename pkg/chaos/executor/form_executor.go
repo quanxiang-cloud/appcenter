@@ -38,7 +38,7 @@ type createRoleReq struct {
 }
 
 type createRoleResp struct {
-	RoleID string `json:"roleID"`
+	RoleID string `json:"id"`
 }
 
 type assignReq struct {
