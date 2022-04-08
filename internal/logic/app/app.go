@@ -668,17 +668,21 @@ func getExtension(data map[string]interface{}) map[string]interface{} {
 }
 
 func (a *app) InitCallBack(ctx context.Context, rq *req.InitCallBackReq) (*resp.InitCallBackResp, error) {
-	status := &req.UpdateAppCenter{
+	status := &models.AppCenter{
 		ID:        rq.ID,
 		UpdateBy:  rq.UpdateBy,
+		Server:    rq.Ret,
 		UseStatus: errorInitialize,
 	}
 
 	if rq.Status {
 		status.UseStatus = unReleaseStatus
 	}
-	if err := a.UpdateStatus(ctx, status); err != nil {
+
+	if err := a.app.Update(status, a.DB); err != nil {
 		return nil, err
 	}
 	return &resp.InitCallBackResp{}, nil
 }
+
+// func (a *app) InitServer(ctx context.Context, rq *req.)

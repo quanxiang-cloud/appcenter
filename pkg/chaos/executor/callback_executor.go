@@ -26,9 +26,11 @@ func (b *BaseExecutor) Exec(ctx context.Context, m define.Msg) error {
 	req := &struct {
 		ID     string `json:"id"`
 		Status bool   `json:"status"`
+		Ret    int    `json:"ret"`
 	}{
 		ID:     m.AppID,
 		Status: b.status,
+		Ret:    m.Ret,
 	}
 
 	resp := &define.Response{}

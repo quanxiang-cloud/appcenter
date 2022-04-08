@@ -143,4 +143,5 @@ type InitCallBackReq struct {
 	UpdateBy     string `json:"-"`
 	UpdateByName string `json:"-"`
 	Status       bool   `json:"status"`
+	Ret          int    `json:"ret"`
 }

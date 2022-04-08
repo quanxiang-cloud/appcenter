@@ -21,18 +21,19 @@ type data struct {
 	time  int64
 }
 
-type handler func(context.Context, define.Msg) error
+type handler func(context.Context, define.Msg) (int, error)
 
 func buildExec(executors []Executor) handler {
-	return func(ctx context.Context, msg define.Msg) error {
+	return func(ctx context.Context, msg define.Msg) (int, error) {
 		for _, e := range executors {
-			if (msg.Content & e.Bit()) == e.Bit() {
+			if (msg.Content&e.Bit()) == e.Bit() && (msg.Ret&e.Bit() == 0) {
 				if err := e.Exec(ctx, msg); err != nil {
-					return err
+					return msg.Ret, err
 				}
+				msg.Ret += e.Bit()
 			}
 		}
-		return nil
+		return msg.Ret, nil
 	}
 }
 
@@ -112,16 +113,16 @@ func cacheDuration(waitTime, maximumRetry int) time.Duration {
 func (ih *InitHandler) Run() {
 	if ih.taskHandler == nil {
 		ih.log.Warnf("[TaskHandler] taskHandler is a empty func")
-		ih.taskHandler = func(context.Context, define.Msg) error {
+		ih.taskHandler = func(context.Context, define.Msg) (int, error) {
 			ih.log.Warnf("[TaskHandler] empty func is called")
-			return nil
+			return 0, nil
 		}
 	}
 	if ih.successHandler == nil {
 		ih.log.Warnf("[ResultHandler] resultHandler is a empty func")
-		ih.successHandler = func(context.Context, define.Msg) error {
+		ih.successHandler = func(context.Context, define.Msg) (int, error) {
 			ih.log.Warnf("[ResultHandler] empty func is called")
-			return nil
+			return 0, nil
 		}
 	}
 	for i := 0; i < ih.workload; i++ {
@@ -165,7 +166,8 @@ func (ih *InitHandler) run() {
 		data := <-ih.task
 
 		if data.time <= time.Now().Unix() {
-			if err := ih.taskHandler(data.ctx, data.msg); err != nil {
+			if ret, err := ih.taskHandler(data.ctx, data.msg); err != nil {
+				data.msg.Ret = ret
 				ih.log.Errorf("[TaskHandler] failed to init-server: %s", err.Error())
 
 				data.retry++
@@ -173,14 +175,14 @@ func (ih *InitHandler) run() {
 					data.time = time.Now().Add(time.Duration(data.retry*ih.waitTime) * time.Minute).Unix()
 					ih.task <- data
 				} else {
-					if err := ih.failureHandler(data.ctx, data.msg); err != nil {
+					if _, err := ih.failureHandler(data.ctx, data.msg); err != nil {
 						ih.log.Errorf("[failureHandler] failed to do: %s", err.Error())
 					}
 				}
 				continue
 			}
 
-			if err := ih.successHandler(data.ctx, data.msg); err != nil {
+			if _, err := ih.successHandler(data.ctx, data.msg); err != nil {
 				ih.log.Errorf("[resultHandler] failed to do: %s", err.Error())
 			}
 		} else {

@@ -5,6 +5,7 @@ type Msg struct {
 	AppID    string `json:"appID"`
 	CreateBy string `json:"createBy"`
 	Content  int    `json:"content"` // bits of server
+	Ret      int    `json:"-"`
 }
 
 // Response response
