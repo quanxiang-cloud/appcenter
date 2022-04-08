@@ -96,6 +96,12 @@ func (u appCenterRepo) SelectByPage(userID, name string, status, page, limit int
 	return nil, 0
 }
 
+func (u appCenterRepo) SelectByStatus(db *gorm.DB, status int) ([]*models.AppCenter, error) {
+	ret := make([]*models.AppCenter, 0)
+	err := db.Where("use_status=?", status).Find(&ret).Error
+	return ret, err
+}
+
 func (u appCenterRepo) SelectByID(id string, db *gorm.DB) (res *models.AppCenter) {
 	app := models.AppCenter{}
 	affected := db.Where("id=?", id).Find(&app).RowsAffected

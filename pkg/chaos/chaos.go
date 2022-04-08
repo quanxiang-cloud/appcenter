@@ -18,23 +18,28 @@ type Chaos struct {
 
 // New New
 func New(handler *handle.InitHandler, log logger.AdaptedLogger) *Chaos {
-	handler.Run()
-	return &Chaos{
+	chaos := &Chaos{
 		log:     log,
 		handler: handler,
 	}
+	chaos.handler.Run()
+
+	return chaos
 }
 
 // Handle Handle
 func (p *Chaos) Handle(c *gin.Context) {
-	msg := define.Msg{}
-	if err := c.ShouldBind(&msg); err != nil {
+	msgs := make([]define.Msg, 0)
+	if err := c.ShouldBind(&msgs); err != nil {
 		resp.Format(nil, error2.NewErrorWithString(error2.ErrParams, err.Error()))
 		return
 	}
 
-	if err := p.handler.Put(header.MutateContext(c), msg); err != nil {
-		resp.Format(nil, error2.NewErrorWithString(error2.ErrParams, err.Error()))
-		return
+	ctx := header.MutateContext(c)
+	for _, msg := range msgs {
+		if err := p.handler.Put(ctx, msg); err != nil {
+			resp.Format(nil, error2.NewErrorWithString(error2.ErrParams, err.Error()))
+			return
+		}
 	}
 }

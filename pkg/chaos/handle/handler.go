@@ -2,12 +2,16 @@ package handle
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/quanxiang-cloud/appcenter/pkg/broker"
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/define"
+	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/cabin/logger"
+	redis2 "github.com/quanxiang-cloud/cabin/tailormade/db/redis"
 )
 
 type data struct {
@@ -43,28 +47,50 @@ type InitHandler struct {
 	workload       int
 	maximumRetry   int
 	waitTime       int
+	sync           bool
 
+	redis  *redis.ClusterClient
 	broker *broker.Broker
-
-	log logger.AdaptedLogger
+	log    logger.AdaptedLogger
 }
 
 // New New
-func New(workload, maximumRetry, waitTime int, broker *broker.Broker, log logger.AdaptedLogger) *InitHandler {
-	return &InitHandler{
-		task:         make(chan data, workload*8),
+func New(c *config.Configs, broker *broker.Broker, log logger.AdaptedLogger) (*InitHandler, error) {
+	handler := &InitHandler{
+		task:         make(chan data, c.WorkLoad*8),
 		Stopped:      false,
+		workload:     c.WorkLoad,
+		maximumRetry: c.MaximumRetry,
+		waitTime:     c.WaitTime,
+		sync:         c.Sync,
 		broker:       broker,
 		log:          log,
-		workload:     workload,
-		maximumRetry: maximumRetry,
-		waitTime:     waitTime,
 	}
+
+	if handler.sync {
+		redis, err := redis2.NewClient(c.Redis)
+		if err != nil {
+			return nil, err
+		}
+		handler.redis = redis
+	}
+	return handler, nil
 }
 
 // Put Put
 func (ih *InitHandler) Put(ctx context.Context, msg define.Msg) error {
 	if !ih.Stopped {
+		if ih.sync {
+			cache, err := json.Marshal(msg)
+			if err != nil {
+				return err
+			}
+			if boolCmd := ih.redis.SetNX(ctx, "chaos:"+msg.AppID, cache, time.Duration(ih.waitTime*ih.maximumRetry)*time.Minute); !boolCmd.Val() {
+				ih.log.Warnf("app (%s) is initing.", msg.AppID)
+				return nil
+			}
+		}
+
 		ih.task <- data{
 			msg:   msg,
 			ctx:   ctx,
@@ -74,6 +100,12 @@ func (ih *InitHandler) Put(ctx context.Context, msg define.Msg) error {
 		return nil
 	}
 	return fmt.Errorf("handler is stopping")
+}
+
+// Σ(maximumRetry) * waitTime
+func cacheDuration(waitTime, maximumRetry int) time.Duration {
+	c := ((maximumRetry + 1) * maximumRetry) / 2
+	return time.Duration(c*waitTime) * time.Minute
 }
 
 // Run Run
@@ -95,7 +127,10 @@ func (ih *InitHandler) Run() {
 	for i := 0; i < ih.workload; i++ {
 		go ih.run()
 	}
-	ih.withCancel()
+
+	if ih.broker != nil {
+		ih.withCancel()
+	}
 }
 
 // SetTaskExecutors SetTaskExecutors

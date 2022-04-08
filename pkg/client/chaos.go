@@ -27,22 +27,19 @@ type chaos struct {
 
 // Chaos Chaos
 type Chaos interface {
-	Init(ctx context.Context, appID, createBy, userName string, content int) error
+	Init(ctx context.Context, req *InitReq) error
 }
 
-// Req req
-type Req = define.Msg
+// InitReq req
+type InitReq = []Msg
 
-// Resp Resp
-type Resp = define.Response
+// Msg msg
+type Msg = define.Msg
+
+// InitResp InitResp
+type InitResp = define.Response
 
 // Init init
-func (c *chaos) Init(ctx context.Context, appID, createBy, userName string, content int) error {
-	req := &Req{
-		AppID:    appID,
-		CreateBy: createBy,
-		UserName: userName,
-		Content:  content,
-	}
-	return client.POST(ctx, &c.client, ChaosURL, req, &Resp{})
+func (c *chaos) Init(ctx context.Context, req *InitReq) error {
+	return client.POST(ctx, &c.client, ChaosURL, req, &InitResp{})
 }

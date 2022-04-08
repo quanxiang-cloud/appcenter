@@ -49,11 +49,11 @@ type AppCenter struct {
 }
 
 // NewAppCenter new appCenter
-func NewAppCenter(c *config2.Configs, db *gorm.DB) *AppCenter {
-	g := app.NewApp(c, db)
+func NewAppCenter(c *config2.Configs, db *gorm.DB) (*AppCenter, error) {
+	g, err := app.NewApp(c, db)
 	return &AppCenter{
 		appCenter: g,
-	}
+	}, err
 }
 
 // Add create a app

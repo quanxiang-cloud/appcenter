@@ -57,7 +57,10 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 	if err != nil {
 		return nil, err
 	}
-	app := NewAppCenter(c, db)
+	app, err := NewAppCenter(c, db)
+	if err != nil {
+		return nil, err
+	}
 
 	k := v1.Group("")
 	{
@@ -120,27 +123,33 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 		return nil, err
 	}
 
-	initHandler := handle.New(c.WorkLoad, c.MaximumRetry, c.WaitTime, b, log)
-
+	initHandler, err := handle.New(c, b, log)
+	if err != nil {
+		return nil, err
+	}
 	// TODO: set executors
-	initHandler.SetTaskExecutors(&exec.PolyExecutor{
-		Client:  client.New(c.InternalNet),
-		PolyURL: c.KV.Get(exec.PolyURL),
+	initHandler.SetTaskExecutors(&exec.FormExecutor{
+		Client:     client.New(c.InternalNet),
+		CreateRole: c.KV[exec.FormCreateRole],
+		AssignRole: c.KV[exec.FormAssignRole],
 	})
 	initHandler.SetSuccessExecutors(&exec.SuccessExecutor{
 		BaseExecutor: exec.BaseExecutor{
 			Client:       client.New(c.InternalNet),
-			AppCenterURL: c.KV.Get(exec.AppCenterURL),
+			AppCenterURL: c.KV[exec.AppCenterURL],
 		},
 	})
 	initHandler.SetFailureExecutors(&exec.FailureExecutor{
 		BaseExecutor: exec.BaseExecutor{
 			Client:       client.New(c.InternalNet),
-			AppCenterURL: c.KV.Get(exec.AppCenterURL),
+			AppCenterURL: c.KV[exec.AppCenterURL],
 		},
 	})
 
 	p := chaos.New(initHandler, log)
+	if err != nil {
+		return nil, err
+	}
 	engine.POST("/init", p.Handle)
 
 	return &Router{
