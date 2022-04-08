@@ -191,7 +191,7 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 	app.CreateTime = nowUnix
 	app.UpdateTime = nowUnix
 	app.UseStatus = unReady
-	app.Server = a.initServerBits
+	app.Server = 0
 	app.AppSign = rq.AppSign
 	app.Extension = getExtension(rq.Extension)
 	app.Description = rq.Description
@@ -218,7 +218,7 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 	err = a.chaosAPI.Init(ctx, &client.InitReq{{
 		AppID:    app.ID,
 		CreateBy: app.CreateBy,
-		Content:  app.Server,
+		Content:  a.initServerBits,
 	}})
 
 	return &center, err
