@@ -29,7 +29,11 @@ type initAppPath struct {
 
 // Exec Exec
 func (p *PolyExecutor) Exec(ctx context.Context, m define.Msg) error {
-	polyReq := &initPolyReq{}
+	polyReq := &initPolyReq{
+		Data: initAppPath{
+			AppID: m.AppID,
+		},
+	}
 	polyResp := &define.Response{}
 	if err := client.POST(ctx, &p.Client, p.PolyURL, polyReq, polyResp); err != nil {
 		return err
