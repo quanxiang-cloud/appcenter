@@ -66,20 +66,20 @@ func (s *FormExecutor) Exec(ctx context.Context, m define.Msg) error {
 		return err
 	}
 
-	assignReq := &assignReq{
-		Add: []*user{
-			{
-				ID:   m.CreateBy,
-				Type: perInitTypes,
-			},
-		},
-	}
-	assignResp := &assignResp{}
-	if err := client.POST(ctx, &s.Client, fmt.Sprintf(s.AssignRole, m.AppID, roleResp.RoleID), assignReq, assignResp); err != nil {
-		logger.Logger.Errorf("init form url: %s", fmt.Sprintf(s.AssignRole, m.AppID, roleResp.RoleID))
-		logger.Logger.Errorf("init form: %s", err)
-		return err
-	}
+	// assignReq := &assignReq{
+	// 	Add: []*user{
+	// 		{
+	// 			ID:   m.CreateBy,
+	// 			Type: perInitTypes,
+	// 		},
+	// 	},
+	// }
+	// assignResp := &assignResp{}
+	// if err := client.POST(ctx, &s.Client, fmt.Sprintf(s.AssignRole, m.AppID, roleResp.RoleID), assignReq, assignResp); err != nil {
+	// 	logger.Logger.Errorf("init form url: %s", fmt.Sprintf(s.AssignRole, m.AppID, roleResp.RoleID))
+	// 	logger.Logger.Errorf("init form: %s", err)
+	// 	return err
+	// }
 
 	return nil
 }
