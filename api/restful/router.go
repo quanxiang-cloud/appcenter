@@ -89,6 +89,7 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 		k.POST("/exportApp", app.ExportApp)
 		k.POST("/importApp", app.CreateImportApp)
 		k.POST("/initCallBack", app.InitCallBack)
+		k.POST("/initServer", app.InitServer)
 	}
 
 	template := NewTemplate(c, db)

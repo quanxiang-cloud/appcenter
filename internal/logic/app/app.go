@@ -685,4 +685,12 @@ func (a *app) InitCallBack(ctx context.Context, rq *req.InitCallBackReq) (*resp.
 	return &resp.InitCallBackResp{}, nil
 }
 
-// func (a *app) InitServer(ctx context.Context, rq *req.)
+func (a *app) InitServer(ctx context.Context, rq *req.InitServerReq) (*resp.InitServerResp, error) {
+	err := a.chaosAPI.Init(ctx, &client.InitReq{{
+		AppID:    rq.ID,
+		CreateBy: rq.CreateBy,
+		Content:  a.initServerBits,
+	}})
+
+	return &resp.InitServerResp{}, err
+}

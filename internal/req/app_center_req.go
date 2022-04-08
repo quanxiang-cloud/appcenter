@@ -145,3 +145,10 @@ type InitCallBackReq struct {
 	Status       bool   `json:"status"`
 	Ret          int    `json:"ret"`
 }
+
+// InitServerReq InitServerReq
+type InitServerReq struct {
+	ID       string `json:"id"`
+	CreateBy string `json:"createBy"`
+	Server   int    `json:"server"`
+}
