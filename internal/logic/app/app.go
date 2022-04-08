@@ -130,6 +130,7 @@ func (a *app) AdminPageList(ctx context.Context, rq *req.SelectListAppCenter) (*
 			appc.CreateTime = list[k].CreateTime
 			appc.UpdateTime = list[k].UpdateTime
 			appc.UseStatus = list[k].UseStatus
+			appc.Server = list[k].Server
 			appc.Extension = getExtension(list[k].Extension)
 			appc.Description = list[k].Description
 			res = append(res, appc)
@@ -157,6 +158,7 @@ func (a *app) SuperAdminPageList(ctx context.Context, rq *req.SelectListAppCente
 			appc.CreateTime = list[k].CreateTime
 			appc.UpdateTime = list[k].UpdateTime
 			appc.UseStatus = list[k].UseStatus
+			appc.Server = list[k].Server
 			appc.Extension = getExtension(list[k].Extension)
 			appc.Description = list[k].Description
 			res = append(res, appc)
