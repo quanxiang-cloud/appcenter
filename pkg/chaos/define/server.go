@@ -4,5 +4,5 @@ package define
 const (
 	BitAways   = 0
 	BitFormAPI = 1 << 0 // 01
-	BitFaas    = 1 << 1 // 10
+	BitPolyAPI = 1 << 1 // 10
 )

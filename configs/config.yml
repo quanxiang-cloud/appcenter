@@ -65,4 +65,5 @@ sync: false
 kv: 
   form-role: http://form/api/v1/form/%s/internal/apiRole/create
   form-assign: http://form/api/v1/form/%s/internal/apiRole/grant/assign/%s
+  poly-init: http://polyapi:9090/api/v1/polyapi/inner/initAppPath
   app-center: http://localhost/api/v1/app-center/initCallBack

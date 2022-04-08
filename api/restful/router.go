@@ -132,6 +132,9 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 		Client:     client.New(c.InternalNet),
 		CreateRole: c.KV[exec.FormCreateRole],
 		AssignRole: c.KV[exec.FormAssignRole],
+	}, &exec.PolyExecutor{
+		Client:  client.New(c.InternalNet),
+		PolyURL: c.KV[exec.PolyInit],
 	})
 	initHandler.SetSuccessExecutors(&exec.SuccessExecutor{
 		BaseExecutor: exec.BaseExecutor{
