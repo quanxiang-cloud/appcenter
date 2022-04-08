@@ -38,6 +38,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	config.Config.Model = config.Config.AppCenter.Model
+	config.Config.HTTPServer = config.Config.AppCenter.HTTPServer
 
 	logger.Logger = logger.New(&config.Config.Log)
 

@@ -15,4 +15,4 @@ COPY --from=builder ./build/chaos ./cmd/
 
 EXPOSE 6666
 
-ENTRYPOINT ["./cmd/chaos", "-config=/configs/config.yaml"]
+ENTRYPOINT ["./cmd/chaos", "-config=/configs/config.yml"]
