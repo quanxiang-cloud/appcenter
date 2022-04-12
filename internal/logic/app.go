@@ -68,4 +68,8 @@ type AppCenter interface {
 	ErrorImport(ctx context.Context, rq *req.ErrorImportReq) (*resp.ErrorImportResp, error)
 
 	CheckImportVersion(ctx context.Context, rq *req.CheckImportVersionReq) (*resp.CheckImportVersionResp, error)
+
+	InitCallBack(ctx context.Context, rq *req.InitCallBackReq) (*resp.InitCallBackResp, error)
+
+	InitServer(ctx context.Context, rq *req.InitServerReq) (*resp.InitServerResp, error)
 }

@@ -1,54 +1,69 @@
-# model: debug|release
-model: debug
-http:
-  port: 9012
-  readHeaderTimeOut: 15
-  writeTimeOut: 600
-  maxHeaderBytes: 1048576
+# -------------------------------- AppCenter -----------------------------------
+app-center: 
+  # model: debug|release
+  model: debug
+  http:
+    port: 9012
+    readHeaderTimeOut: 15
+    writeTimeOut: 600
+    maxHeaderBytes: 1048576
 
-#-------------------mysql---------------------
-mysql:
-  db: app_center
-  host: 192.168.200.18:3306
-  user: root
-  password: uyWxtvt6gCOy3VPLB3rTpa0rQ
-  log: true
+# initialized server
+initServerBits: 1
 
-
-
-#  -------------------- log --------------------
-# comply with zap log specification
-log:
-  level: -1
-  development: false
-  sampling:
-    initial: 100
-    thereafter: 100
-  outputPath:
-    - stderr
-  errorOutputPath:
-    - stderr
-
-#  -------------------- internalNet --------------------
-internalNet:
-  timeout: 20
-  maxIdleConns: 10
-
-#-------------------redis-----------------
-redis:
-  addrs:
-    - "192.168.200.18:6379"
-    - "192.168.200.19:6379"
-    - "192.168.200.20:6379"
-  username:
-  password:
-
-#----------------inner server host----------
 innerHost:
   structor: "http://structor"
   flow: "http://flow"
   polyAPI: "http://polyapi:9090"
   org: "http://org"
 
-#----------------import app minimum version-----------
+# import app minimum version
 compatibleVersion: "0.7.3"
+
+
+# ------------------------------------ Common -----------------------------------
+redis:
+  addrs:
+    - "127.0.0.1:6379"
+  username:
+  password:
+
+mysql:
+  db: app_center
+  host: 127.0.0.1:3306
+  user: root
+  password: pwd
+  log: true
+
+# comply with zap log specification
+log:
+  level: -1
+
+internalNet:
+  timeout: 20
+  maxIdleConns: 10
+
+# ----------------------------------- Chaos -----------------------------------------
+chaos:
+  model: debug
+  http:
+    port: 6666
+
+# Amount of goroutine to handle tasks
+workLoad: 8
+
+# Maximum number of retries
+maximumRetry: 3
+
+# Duration of retrying
+waitTime: 2
+
+# Signal of avoiding handling multiple task
+sync: false
+
+# Custom defination
+kv: 
+  form-role: http://form/api/v1/form/%s/internal/apiRole/create
+  form-assign: http://form/api/v1/form/%s/internal/apiRole/grant/assign/%s
+  poly-init: http://polyapi:9090/api/v1/polyapi/inner/initAppPath
+  app-center: http://localhost/api/v1/app-center/initCallBack

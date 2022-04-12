@@ -24,6 +24,7 @@ type AdminAppCenter struct {
 	CreateTime  int64                  `json:"createTime,omitempty"`
 	UpdateTime  int64                  `json:"updateTime,omitempty"`
 	UseStatus   int                    `json:"useStatus,omitempty"` //published:1，unpublished:-1
+	Server      int                    `json:"server,omitempty"`
 	DelFlag     int64                  `json:"delFlag,omitempty"`
 	AppSign     string                 `json:"appSign,omitempty"`
 	Extension   map[string]interface{} `json:"extension"`
@@ -87,4 +88,12 @@ type ErrorImportResp struct {
 
 // CheckImportVersionResp CheckImportVersionResp
 type CheckImportVersionResp struct {
+}
+
+// InitCallBackResp InitCallBackResp
+type InitCallBackResp struct {
+}
+
+// InitServerResp InitServerResp
+type InitServerResp struct {
 }

@@ -49,11 +49,11 @@ type AppCenter struct {
 }
 
 // NewAppCenter new appCenter
-func NewAppCenter(c *config2.Configs, db *gorm.DB) *AppCenter {
-	g := app.NewApp(c, db)
+func NewAppCenter(c *config2.Configs, db *gorm.DB) (*AppCenter, error) {
+	g, err := app.NewApp(c, db)
 	return &AppCenter{
 		appCenter: g,
-	}
+	}, err
 }
 
 // Add create a app
@@ -512,4 +512,31 @@ func isSuperRole(c *gin.Context) bool {
 		}
 	}
 	return false
+}
+
+// InitCallBack call back
+func (a *AppCenter) InitCallBack(c *gin.Context) {
+	ctx := header2.MutateContext(c)
+	rq := &req.InitCallBackReq{}
+	if err := c.ShouldBind(rq); err != nil {
+		logger.Logger.Error(err)
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	rq.UpdateBy = c.GetHeader(_userID)
+	rq.UpdateByName = c.GetHeader(_userName)
+	resp.Format(a.appCenter.InitCallBack(ctx, rq)).Context(c)
+}
+
+// InitServer init
+func (a *AppCenter) InitServer(c *gin.Context) {
+	ctx := header2.MutateContext(c)
+	rq := &req.InitServerReq{}
+	if err := c.ShouldBind(rq); err != nil {
+		logger.Logger.Error(err)
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	rq.CreateBy = c.GetHeader(_userID)
+	resp.Format(a.appCenter.InitServer(ctx, rq)).Context(c)
 }

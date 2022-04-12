@@ -5,4 +5,3 @@ alter table t_app_center
     add description text null;
 
 
-

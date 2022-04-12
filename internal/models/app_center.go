@@ -16,6 +16,7 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/json"
+
 	"gorm.io/gorm"
 )
 
@@ -40,7 +41,8 @@ type AppCenter struct {
 	CreateTime int64  `gorm:"column:create_time;type:bigint; " json:"createTime"`
 	UpdateTime int64  `gorm:"column:update_time;type:bigint; " json:"updateTime"`
 	UseStatus  int    `gorm:"column:use_status;"  json:"useStatus"` //published1，unpublished-1
-	DelFlag    int64  `gorm:"column:del_flag;"  json:"delFlag"`     //delete marker 0 not deleted 1 deleted
+	Server     int    `gorm:"column:server;" json:"server"`
+	DelFlag    int64  `gorm:"column:del_flag;"  json:"delFlag"` //delete marker 0 not deleted 1 deleted
 	// The default time is five days after you click delete.
 	// If you click delete in the recycle bin, the delete time changes to the current time
 	DeleteTime  int64     `gorm:"column:delete_time;type:bigint; " json:"deleteTime"` //default remove
@@ -76,4 +78,5 @@ type AppRepo interface {
 	UpdateDelFlag(db *gorm.DB, id string, deleteTime int64) error
 	GetDeleteList(db *gorm.DB, deleteTime int64) ([]*AppCenter, error)
 	SelectByAppSign(db *gorm.DB, appSign string) *AppCenter
+	SelectByStatus(db *gorm.DB, status int) ([]*AppCenter, error)
 }
