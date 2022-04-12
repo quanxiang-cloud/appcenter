@@ -166,8 +166,9 @@ func (ih *InitHandler) run() {
 		data := <-ih.task
 
 		if data.time <= time.Now().Unix() {
-			if ret, err := ih.taskHandler(data.ctx, data.msg); err != nil {
-				data.msg.Ret = ret
+			ret, err := ih.taskHandler(data.ctx, data.msg)
+			data.msg.Ret = ret
+			if err != nil {
 				ih.log.Errorf("[TaskHandler] failed to init-server: %s", err.Error())
 
 				data.retry++
