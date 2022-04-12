@@ -6,7 +6,6 @@ import (
 
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/define"
 	"github.com/quanxiang-cloud/cabin/logger"
-	"github.com/quanxiang-cloud/cabin/tailormade/client"
 )
 
 // Key
@@ -36,7 +35,7 @@ func (p *PolyExecutor) Exec(ctx context.Context, m define.Msg) error {
 		},
 	}
 	polyResp := &define.Response{}
-	if err := client.POST(ctx, &p.Client, p.PolyURL, polyReq, polyResp); err != nil {
+	if err := post(ctx, &p.Client, p.PolyURL, polyReq, polyResp); err != nil {
 		logger.Logger.Errorf("init polyapi url: %s", p.PolyURL)
 		logger.Logger.Errorf("%s", err)
 		return err

@@ -7,7 +7,6 @@ import (
 
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/define"
 	"github.com/quanxiang-cloud/cabin/logger"
-	"github.com/quanxiang-cloud/cabin/tailormade/client"
 )
 
 // Key
@@ -60,7 +59,7 @@ func (s *FormExecutor) Exec(ctx context.Context, m define.Msg) error {
 		Description: description,
 	}
 	roleResp := &createRoleResp{}
-	if err := client.POST(ctx, &s.Client, fmt.Sprintf(s.CreateRole, m.AppID), roleReq, roleResp); err != nil {
+	if err := post(ctx, &s.Client, fmt.Sprintf(s.CreateRole, m.AppID), roleReq, roleResp); err != nil {
 		logger.Logger.Errorf("init form url: %s", fmt.Sprintf(s.CreateRole, m.AppID))
 		logger.Logger.Errorf("init form: %s", err)
 		return err
@@ -75,7 +74,7 @@ func (s *FormExecutor) Exec(ctx context.Context, m define.Msg) error {
 		},
 	}
 	assignResp := &assignResp{}
-	if err := client.POST(ctx, &s.Client, fmt.Sprintf(s.AssignRole, m.AppID, roleResp.RoleID), assignReq, assignResp); err != nil {
+	if err := post(ctx, &s.Client, fmt.Sprintf(s.AssignRole, m.AppID, roleResp.RoleID), assignReq, assignResp); err != nil {
 		logger.Logger.Errorf("init form url: %s", fmt.Sprintf(s.AssignRole, m.AppID, roleResp.RoleID))
 		logger.Logger.Errorf("init form: %s", err)
 		return err
