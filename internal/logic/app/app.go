@@ -588,6 +588,7 @@ func (a *app) CreateImportApp(ctx context.Context, rq *req.AddAppCenter) (*resp.
 	app.AppName = rq.AppName
 	app.AccessURL = rq.AccessURL
 	app.AppIcon = rq.AppIcon
+	app.Server = a.initServerBits
 	app.CreateBy = rq.CreateBy
 	app.UpdateBy = rq.CreateBy
 	app.CreateTime = nowUnix
