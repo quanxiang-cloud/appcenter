@@ -20,9 +20,8 @@ const (
 )
 
 const (
-	perInitTypes = 0
-	name         = "全部权限"
-	description  = "系统默认角色"
+	name        = "全部权限"
+	description = "系统默认角色"
 )
 
 // FormExecutor FormExecutor
@@ -34,6 +33,7 @@ type FormExecutor struct {
 
 type createRoleReq struct {
 	Name        string `json:"name"`
+	Types       int    `json:"types"`
 	Description string `json:"description"`
 }
 
@@ -57,6 +57,7 @@ func (s *FormExecutor) Exec(ctx context.Context, m define.Msg) error {
 	roleReq := &createRoleReq{
 		Name:        name,
 		Description: description,
+		Types:       1,
 	}
 	roleResp := &createRoleResp{}
 	if err := post(ctx, &s.Client, fmt.Sprintf(s.CreateRole, m.AppID), roleReq, roleResp); err != nil {
@@ -69,7 +70,7 @@ func (s *FormExecutor) Exec(ctx context.Context, m define.Msg) error {
 		Add: []*user{
 			{
 				ID:   m.CreateBy,
-				Type: perInitTypes,
+				Type: 1,
 			},
 		},
 	}
