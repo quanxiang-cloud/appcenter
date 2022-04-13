@@ -63,7 +63,7 @@ type Configs struct {
 	WorkLoad     int               `yaml:"workLoad"`
 	MaximumRetry int               `yaml:"maximumRetry"`
 	WaitTime     int               `yaml:"waitTime"`
-	Sync         bool              `yaml:"sync"`
+	CachePath    string            `yaml:"cachePath"`
 	KV           map[string]string `yaml:"kv"`
 }
 

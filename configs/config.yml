@@ -9,7 +9,7 @@ app-center:
     maxHeaderBytes: 1048576
 
 # initialized server
-initServerBits: 1
+initServerBits: 3
 
 innerHost:
   structor: "http://structor"
@@ -50,7 +50,7 @@ chaos:
     port: 6666
 
 # Amount of goroutine to handle tasks
-workLoad: 8
+workLoad: 3
 
 # Maximum number of retries
 maximumRetry: 3
@@ -58,8 +58,7 @@ maximumRetry: 3
 # Duration of retrying
 waitTime: 2
 
-# Signal of avoiding handling multiple task
-sync: false
+cachePath: /path/file
 
 # Custom defination
 kv: 

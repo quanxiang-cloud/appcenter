@@ -124,7 +124,7 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 		return nil, err
 	}
 
-	initHandler, err := handle.New(c, b, log)
+	initHandler, init, err := handle.New(c, b, log)
 	if err != nil {
 		return nil, err
 	}
@@ -137,6 +137,7 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 		Client:  client.New(c.InternalNet),
 		PolyURL: c.KV[exec.PolyInit],
 	})
+
 	initHandler.SetSuccessExecutors(&exec.SuccessExecutor{
 		BaseExecutor: exec.BaseExecutor{
 			Client:       client.New(c.InternalNet),
@@ -150,7 +151,7 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 		},
 	})
 
-	p := chaos.New(initHandler, log)
+	p := chaos.New(initHandler, log, init)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,8 @@
 package chaos
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/define"
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/handle"
@@ -17,12 +19,13 @@ type Chaos struct {
 }
 
 // New New
-func New(handler *handle.InitHandler, log logger.AdaptedLogger) *Chaos {
+func New(handler *handle.InitHandler, log logger.AdaptedLogger, init bool) *Chaos {
 	chaos := &Chaos{
 		log:     log,
 		handler: handler,
 	}
 	chaos.handler.Run()
+	fmt.Println(init)
 
 	return chaos
 }
