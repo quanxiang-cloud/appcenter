@@ -65,6 +65,9 @@ func (s *FormExecutor) Exec(ctx context.Context, m define.Msg) error {
 		logger.Logger.Errorf("init form: %s", err)
 		return err
 	}
+	if roleResp.RoleID == "" {
+		return nil
+	}
 
 	assignReq := &assignReq{
 		Add: []*user{
