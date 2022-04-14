@@ -49,7 +49,8 @@ func InitExec(handler *handle.TaskHandler) error {
 	for resp.Total > req.Limit*req.Page || req.Page == 0 {
 		req.Page++
 		if err := client.POST(ctx, &cli, c.KV[reload], req, resp); err != nil {
-			return err
+			req.Page--
+			continue
 		}
 
 		for _, app := range resp.Data {
