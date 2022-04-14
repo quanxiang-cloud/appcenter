@@ -102,8 +102,10 @@ func (ih *TaskHandler) Put(ctx context.Context, msg define.Msg) error {
 
 // Run Run
 func (ih *TaskHandler) Run() error {
-	if err := ih.initHandler(ih); err != nil {
-		return err
+	if ih.firstInit {
+		if err := ih.initHandler(ih); err != nil {
+			return err
+		}
 	}
 
 	if ih.taskHandler == nil {
