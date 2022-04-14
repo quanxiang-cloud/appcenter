@@ -13,10 +13,11 @@ import (
 )
 
 type data struct {
-	Msg   define.Msg      `json:"msg"`
-	Ctx   context.Context `json:"ctx"`
-	Retry int             `json:"retry"`
-	Time  int64           `json:"time"`
+	Msg          define.Msg      `json:"msg"`
+	SerializeCTX serializeCTX    `json:"ctx"`
+	CTX          context.Context `json:"-"`
+	Retry        int             `json:"retry"`
+	Time         int64           `json:"time"`
 }
 
 type handler func(context.Context, define.Msg) (int, error)
@@ -35,51 +36,63 @@ func buildExec(executors []Executor) handler {
 	}
 }
 
-// InitHandler InitHandler
-type InitHandler struct {
+// TaskHandler TaskHandler
+type TaskHandler struct {
 	Stopped bool
+	Config  *config.Configs
 
-	task           chan data
-	taskQueue      *taskQueue
+	task         chan data
+	taskQueue    *taskQueue
+	workload     int
+	maximumRetry int
+	waitTime     int
+	defaultBit   int
+	firstInit    bool
+
+	initHandler    InitExecutor
 	taskHandler    handler
 	successHandler handler
 	failureHandler handler
-	workload       int
-	maximumRetry   int
-	waitTime       int
 
 	broker *broker.Broker
 	log    logger.AdaptedLogger
 }
 
 // New New
-func New(c *config.Configs, broker *broker.Broker, log logger.AdaptedLogger) (*InitHandler, bool, error) {
+func New(c *config.Configs, broker *broker.Broker, log logger.AdaptedLogger) (*TaskHandler, error) {
 	taskQueue, init, err := newTaskQueue(c.CachePath)
 	if err != nil {
-		return nil, init, err
+		return nil, err
 	}
 
-	handler := &InitHandler{
-		task: make(chan data, c.WorkLoad*4), Stopped: false,
+	handler := &TaskHandler{
+		Config: c,
+		task:   make(chan data, c.WorkLoad*4), Stopped: false,
 		taskQueue:    taskQueue,
 		workload:     c.WorkLoad,
 		maximumRetry: c.MaximumRetry,
 		waitTime:     c.WaitTime,
+		defaultBit:   c.InitServerBits,
+		firstInit:    init,
 		broker:       broker,
 		log:          log,
 	}
 
-	return handler, init, nil
+	return handler, nil
 }
 
 // Put Put
-func (ih *InitHandler) Put(ctx context.Context, msg define.Msg) error {
+func (ih *TaskHandler) Put(ctx context.Context, msg define.Msg) error {
 	if !ih.Stopped {
+		if msg.Content == 0 {
+			msg.Content = ih.defaultBit
+		}
+
 		if err := ih.taskQueue.put(data{
-			Msg:   msg,
-			Ctx:   ctx,
-			Retry: 0,
-			Time:  time.Now().Unix(),
+			Msg:          msg,
+			SerializeCTX: marshalCTXHeader(ctx),
+			Retry:        0,
+			Time:         time.Now().Unix(),
 		}); err != nil {
 			return err
 		}
@@ -88,7 +101,11 @@ func (ih *InitHandler) Put(ctx context.Context, msg define.Msg) error {
 }
 
 // Run Run
-func (ih *InitHandler) Run() {
+func (ih *TaskHandler) Run() error {
+	if err := ih.initHandler(ih); err != nil {
+		return err
+	}
+
 	if ih.taskHandler == nil {
 		ih.log.Warnf("[TaskHandler] taskHandler is a empty func")
 		ih.taskHandler = func(context.Context, define.Msg) (int, error) {
@@ -113,9 +130,10 @@ func (ih *InitHandler) Run() {
 	if ih.broker != nil {
 		ih.withCancel()
 	}
+	return nil
 }
 
-func (ih *InitHandler) getTasks() {
+func (ih *TaskHandler) getTasks() {
 	for {
 		d, err := ih.taskQueue.pop(ih.workload * 8)
 		if err != nil {
@@ -128,6 +146,7 @@ func (ih *InitHandler) getTasks() {
 				ih.log.Errorf(err.Error())
 				continue
 			}
+			task.CTX = unmarshalCTXHeader(task.SerializeCTX)
 			ih.task <- *task
 		}
 
@@ -135,12 +154,12 @@ func (ih *InitHandler) getTasks() {
 	}
 }
 
-func (ih *InitHandler) run() {
+func (ih *TaskHandler) run() {
 	for {
 		data := <-ih.task
 
 		if data.Time <= time.Now().Unix() {
-			ret, err := ih.taskHandler(data.Ctx, data.Msg)
+			ret, err := ih.taskHandler(data.CTX, data.Msg)
 			data.Msg.Ret = ret
 			if err != nil {
 				ih.log.Errorf("[TaskHandler] failed to init-server: %s", err.Error())
@@ -152,14 +171,14 @@ func (ih *InitHandler) run() {
 						ih.log.Errorf(err.Error())
 					}
 				} else {
-					if _, err := ih.failureHandler(data.Ctx, data.Msg); err != nil {
+					if _, err := ih.failureHandler(data.CTX, data.Msg); err != nil {
 						ih.log.Errorf("[failureHandler] failed to do: %s", err.Error())
 					}
 				}
 				continue
 			}
 
-			if _, err := ih.successHandler(data.Ctx, data.Msg); err != nil {
+			if _, err := ih.successHandler(data.CTX, data.Msg); err != nil {
 				ih.log.Errorf("[resultHandler] failed to do: %s", err.Error())
 			}
 		} else {
@@ -171,22 +190,27 @@ func (ih *InitHandler) run() {
 	}
 }
 
+// SetInitExecutors SetInitExecutors
+func (ih *TaskHandler) SetInitExecutors(executor InitExecutor) {
+	ih.initHandler = executor
+}
+
 // SetTaskExecutors SetTaskExecutors
-func (ih *InitHandler) SetTaskExecutors(executors ...Executor) {
+func (ih *TaskHandler) SetTaskExecutors(executors ...Executor) {
 	ih.taskHandler = buildExec(executors)
 }
 
 // SetSuccessExecutors SetSuccessExecutors
-func (ih *InitHandler) SetSuccessExecutors(executors ...Executor) {
+func (ih *TaskHandler) SetSuccessExecutors(executors ...Executor) {
 	ih.successHandler = buildExec(executors)
 }
 
 // SetFailureExecutors SetFailureExecutors
-func (ih *InitHandler) SetFailureExecutors(executors ...Executor) {
+func (ih *TaskHandler) SetFailureExecutors(executors ...Executor) {
 	ih.failureHandler = buildExec(executors)
 }
 
-func (ih *InitHandler) withCancel() {
+func (ih *TaskHandler) withCancel() {
 	go func() {
 		<-ih.broker.C
 		ih.Stopped = true

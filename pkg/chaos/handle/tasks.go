@@ -2,6 +2,7 @@ package handle
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -126,4 +127,32 @@ func (tq *taskQueue) pop(n int) ([][]byte, error) {
 	}
 
 	return nil, fmt.Errorf("no data to pop")
+}
+
+type serializeCTX struct {
+	RequestID interface{} `json:"requestID"`
+	Timezone  interface{} `json:"timezone"`
+	TenantID  interface{} `json:"tenantID"`
+}
+
+const (
+	_requestID = "Request-Id"
+	_timezone  = "Timezone"
+	_tenantID  = "Tenant-Id"
+)
+
+func marshalCTXHeader(c context.Context) serializeCTX {
+	return serializeCTX{
+		RequestID: c.Value(_requestID),
+		Timezone:  c.Value(_timezone),
+		TenantID:  c.Value(_tenantID),
+	}
+}
+
+func unmarshalCTXHeader(c serializeCTX) context.Context {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, _requestID, c.RequestID)
+	ctx = context.WithValue(ctx, _timezone, c.Timezone)
+	ctx = context.WithValue(ctx, _tenantID, c.TenantID)
+	return ctx
 }

@@ -10,7 +10,7 @@ import (
 
 // key of AppCenterURl
 const (
-	AppCenterURL = "app-center"
+	InitBack = "init-back"
 )
 
 // BaseExecutor BaseExecutor

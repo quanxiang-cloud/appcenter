@@ -152,3 +152,9 @@ type InitServerReq struct {
 	CreateBy string `json:"createBy"`
 	Server   int    `json:"server"`
 }
+
+type ListAppByStatusReq struct {
+	Status int `json:"status"`
+	Page   int `json:"page"`
+	Limit  int `json:"limit"`
+}

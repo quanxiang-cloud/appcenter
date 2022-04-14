@@ -1,11 +1,10 @@
 package chaos
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/define"
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/handle"
+	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	error2 "github.com/quanxiang-cloud/cabin/error"
 	"github.com/quanxiang-cloud/cabin/logger"
 	"github.com/quanxiang-cloud/cabin/tailormade/header"
@@ -15,17 +14,22 @@ import (
 // Chaos Chaos
 type Chaos struct {
 	log     logger.AdaptedLogger
-	handler *handle.InitHandler
+	handler *handle.TaskHandler
+}
+
+type InitReq struct {
+	Status int `json:"status"`
+	Page   int `json:"page"`
+	Limit  int `json:"limit"`
 }
 
 // New New
-func New(handler *handle.InitHandler, log logger.AdaptedLogger, init bool) *Chaos {
+func New(c *config.Configs, handler *handle.TaskHandler, log logger.AdaptedLogger) *Chaos {
 	chaos := &Chaos{
 		log:     log,
 		handler: handler,
 	}
 	chaos.handler.Run()
-	fmt.Println(init)
 
 	return chaos
 }

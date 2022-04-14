@@ -72,4 +72,6 @@ type AppCenter interface {
 	InitCallBack(ctx context.Context, rq *req.InitCallBackReq) (*resp.InitCallBackResp, error)
 
 	InitServer(ctx context.Context, rq *req.InitServerReq) (*resp.InitServerResp, error)
+
+	ListAppByStatus(ctx context.Context, rq *req.ListAppByStatusReq) (*page.Page, error)
 }
