@@ -6,19 +6,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/quanxiang-cloud/appcenter/pkg/broker"
 	"github.com/quanxiang-cloud/appcenter/pkg/chaos/define"
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/cabin/logger"
-	redis2 "github.com/quanxiang-cloud/cabin/tailormade/db/redis"
 )
 
 type data struct {
-	msg   define.Msg
-	ctx   context.Context
-	retry int
-	time  int64
+	Msg          define.Msg      `json:"msg"`
+	SerializeCTX serializeCTX    `json:"ctx"`
+	CTX          context.Context `json:"-"`
+	Retry        int             `json:"retry"`
+	Time         int64           `json:"time"`
 }
 
 type handler func(context.Context, define.Msg) (int, error)
@@ -37,80 +36,89 @@ func buildExec(executors []Executor) handler {
 	}
 }
 
-// InitHandler InitHandler
-type InitHandler struct {
+// TaskHandler TaskHandler
+type TaskHandler struct {
 	Stopped bool
+	Config  *config.Configs
 
-	task           chan data
+	task         chan data
+	taskQueue    *taskQueue
+	workload     int
+	maximumRetry int
+	waitTime     int
+	defaultBit   int
+	firstInit    bool
+
+	initHandler    InitExecutor
 	taskHandler    handler
 	successHandler handler
 	failureHandler handler
-	workload       int
-	maximumRetry   int
-	waitTime       int
-	sync           bool
 
-	redis  *redis.ClusterClient
 	broker *broker.Broker
 	log    logger.AdaptedLogger
 }
 
 // New New
-func New(c *config.Configs, broker *broker.Broker, log logger.AdaptedLogger) (*InitHandler, error) {
-	handler := &InitHandler{
-		task:         make(chan data, c.WorkLoad*8),
-		Stopped:      false,
+func New(c *config.Configs, broker *broker.Broker, log logger.AdaptedLogger) (*TaskHandler, error) {
+	taskQueue, init, err := newTaskQueue(c.CachePath)
+	if err != nil {
+		return nil, err
+	}
+
+	handler := &TaskHandler{
+		Config: c,
+		task:   make(chan data, c.WorkLoad*4), Stopped: false,
+		taskQueue:    taskQueue,
 		workload:     c.WorkLoad,
 		maximumRetry: c.MaximumRetry,
 		waitTime:     c.WaitTime,
-		sync:         c.Sync,
+		defaultBit:   c.InitServerBits,
+		firstInit:    init,
 		broker:       broker,
 		log:          log,
 	}
 
-	if handler.sync {
-		redis, err := redis2.NewClient(c.Redis)
-		if err != nil {
-			return nil, err
-		}
-		handler.redis = redis
-	}
 	return handler, nil
 }
 
 // Put Put
-func (ih *InitHandler) Put(ctx context.Context, msg define.Msg) error {
+func (ih *TaskHandler) Put(ctx context.Context, msg define.Msg) error {
 	if !ih.Stopped {
-		if ih.sync {
-			cache, err := json.Marshal(msg)
-			if err != nil {
-				return err
-			}
-			if boolCmd := ih.redis.SetNX(ctx, "chaos:"+msg.AppID, cache, time.Duration(ih.waitTime*ih.maximumRetry)*time.Minute); !boolCmd.Val() {
-				ih.log.Warnf("app (%s) is initing.", msg.AppID)
-				return nil
-			}
+		if msg.Content == 0 {
+			msg.Content = ih.defaultBit
 		}
 
-		ih.task <- data{
-			msg:   msg,
-			ctx:   ctx,
-			retry: 0,
-			time:  time.Now().Unix(),
+		d := data{
+			Msg:          msg,
+			SerializeCTX: marshalCTXHeader(ctx),
+			CTX:          ctx,
+			Retry:        0,
+			Time:         time.Now().Unix(),
+		}
+
+		if len(ih.task) < cap(ih.task) {
+			ih.log.Debug("put msg into task")
+			ih.task <- d
+			return nil
+		}
+
+		ih.log.Debug("put msg into disk")
+		if err := ih.taskQueue.put(d); err != nil {
+			return err
 		}
 		return nil
 	}
 	return fmt.Errorf("handler is stopping")
 }
 
-// Σ(maximumRetry) * waitTime
-func cacheDuration(waitTime, maximumRetry int) time.Duration {
-	c := ((maximumRetry + 1) * maximumRetry) / 2
-	return time.Duration(c*waitTime) * time.Minute
-}
-
 // Run Run
-func (ih *InitHandler) Run() {
+func (ih *TaskHandler) Run() error {
+	if ih.firstInit {
+		if err := ih.initHandler(ih); err != nil {
+			return err
+		}
+	}
+
 	if ih.taskHandler == nil {
 		ih.log.Warnf("[TaskHandler] taskHandler is a empty func")
 		ih.taskHandler = func(context.Context, define.Msg) (int, error) {
@@ -125,6 +133,9 @@ func (ih *InitHandler) Run() {
 			return 0, nil
 		}
 	}
+
+	go ih.getTasks()
+
 	for i := 0; i < ih.workload; i++ {
 		go ih.run()
 	}
@@ -132,62 +143,99 @@ func (ih *InitHandler) Run() {
 	if ih.broker != nil {
 		ih.withCancel()
 	}
+	return nil
 }
 
-// SetTaskExecutors SetTaskExecutors
-func (ih *InitHandler) SetTaskExecutors(executors ...Executor) {
-	ih.taskHandler = buildExec(executors)
-}
-
-// SetSuccessExecutors SetSuccessExecutors
-func (ih *InitHandler) SetSuccessExecutors(executors ...Executor) {
-	ih.successHandler = buildExec(executors)
-}
-
-// SetFailureExecutors SetFailureExecutors
-func (ih *InitHandler) SetFailureExecutors(executors ...Executor) {
-	ih.failureHandler = buildExec(executors)
-}
-
-func (ih *InitHandler) withCancel() {
-	go func() {
-		<-ih.broker.C
-		ih.Stopped = true
-
-		for len(ih.task) != 0 {
-			<-time.After(time.Second)
+func (ih *TaskHandler) getTasks() {
+	for {
+		d, err := ih.taskQueue.pop(ih.workload * 8)
+		if err != nil {
+			ih.log.Infof(err.Error())
 		}
-		ih.broker.Done()
-	}()
+		if len(d) == 0 {
+			time.Sleep(2 * time.Minute)
+			continue
+		}
+
+		for _, one := range d {
+			task := &data{}
+			if err := json.Unmarshal(one, task); err != nil {
+				ih.log.Errorf(err.Error())
+				continue
+			}
+			task.CTX = unmarshalCTXHeader(task.SerializeCTX)
+			ih.task <- *task
+		}
+	}
 }
 
-func (ih *InitHandler) run() {
+func (ih *TaskHandler) run() {
 	for {
 		data := <-ih.task
+		ih.log.Debugf("do task [%v]", data)
 
-		if data.time <= time.Now().Unix() {
-			ret, err := ih.taskHandler(data.ctx, data.msg)
-			data.msg.Ret = ret
+		if data.Time <= time.Now().Unix() {
+			ret, err := ih.taskHandler(data.CTX, data.Msg)
+			data.Msg.Ret = ret
 			if err != nil {
 				ih.log.Errorf("[TaskHandler] failed to init-server: %s", err.Error())
 
-				data.retry++
-				if data.retry < ih.maximumRetry {
-					data.time = time.Now().Add(time.Duration(data.retry*ih.waitTime) * time.Minute).Unix()
-					ih.task <- data
+				data.Retry++
+				if data.Retry < ih.maximumRetry {
+					data.Time = time.Now().Add(time.Duration(data.Retry*ih.waitTime) * time.Minute).Unix()
+					if err := ih.taskQueue.put(data); err != nil {
+						ih.log.Errorf(err.Error())
+					}
 				} else {
-					if _, err := ih.failureHandler(data.ctx, data.msg); err != nil {
+					if _, err := ih.failureHandler(data.CTX, data.Msg); err != nil {
 						ih.log.Errorf("[failureHandler] failed to do: %s", err.Error())
 					}
 				}
 				continue
 			}
 
-			if _, err := ih.successHandler(data.ctx, data.msg); err != nil {
+			if _, err := ih.successHandler(data.CTX, data.Msg); err != nil {
 				ih.log.Errorf("[resultHandler] failed to do: %s", err.Error())
 			}
 		} else {
-			ih.task <- data
+			ih.log.Debug("put msg into disk")
+			if err := ih.taskQueue.put(data); err != nil {
+				ih.log.Errorf(err.Error())
+			}
 		}
+
 	}
+}
+
+// SetInitExecutors SetInitExecutors
+func (ih *TaskHandler) SetInitExecutors(executor InitExecutor) {
+	ih.initHandler = executor
+}
+
+// SetTaskExecutors SetTaskExecutors
+func (ih *TaskHandler) SetTaskExecutors(executors ...Executor) {
+	ih.taskHandler = buildExec(executors)
+}
+
+// SetSuccessExecutors SetSuccessExecutors
+func (ih *TaskHandler) SetSuccessExecutors(executors ...Executor) {
+	ih.successHandler = buildExec(executors)
+}
+
+// SetFailureExecutors SetFailureExecutors
+func (ih *TaskHandler) SetFailureExecutors(executors ...Executor) {
+	ih.failureHandler = buildExec(executors)
+}
+
+func (ih *TaskHandler) withCancel() {
+	go func() {
+		<-ih.broker.C
+		ih.Stopped = true
+
+		// <-time.After(3 * time.Second)
+		for len(ih.task) != 0 {
+			<-time.After(time.Second)
+		}
+		ih.broker.Done()
+	}()
 }

@@ -15,3 +15,6 @@ type Executor interface {
 	// Exec is always called when bit = 0.
 	Bit() int
 }
+
+// InitExecutor InitExecutor
+type InitExecutor func(*TaskHandler) error

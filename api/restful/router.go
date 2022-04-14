@@ -90,6 +90,7 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 		k.POST("/importApp", app.CreateImportApp)
 		k.POST("/initCallBack", app.InitCallBack)
 		k.POST("/initServer", app.InitServer)
+		k.POST("/listAppByStatus", app.ListAppByStatus)
 	}
 
 	template := NewTemplate(c, db)
@@ -124,12 +125,12 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 		return nil, err
 	}
 
-	initHandler, err := handle.New(c, b, log)
+	handler, err := handle.New(c, b, log)
 	if err != nil {
 		return nil, err
 	}
 	// TODO: set executors
-	initHandler.SetTaskExecutors(&exec.FormExecutor{
+	handler.SetTaskExecutors(&exec.FormExecutor{
 		Client:     client.New(c.InternalNet),
 		CreateRole: c.KV[exec.FormCreateRole],
 		AssignRole: c.KV[exec.FormAssignRole],
@@ -137,20 +138,22 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 		Client:  client.New(c.InternalNet),
 		PolyURL: c.KV[exec.PolyInit],
 	})
-	initHandler.SetSuccessExecutors(&exec.SuccessExecutor{
+
+	handler.SetInitExecutors(exec.InitExec)
+	handler.SetSuccessExecutors(&exec.SuccessExecutor{
 		BaseExecutor: exec.BaseExecutor{
 			Client:       client.New(c.InternalNet),
-			AppCenterURL: c.KV[exec.AppCenterURL],
+			AppCenterURL: c.KV[exec.InitBack],
 		},
 	})
-	initHandler.SetFailureExecutors(&exec.FailureExecutor{
+	handler.SetFailureExecutors(&exec.FailureExecutor{
 		BaseExecutor: exec.BaseExecutor{
 			Client:       client.New(c.InternalNet),
-			AppCenterURL: c.KV[exec.AppCenterURL],
+			AppCenterURL: c.KV[exec.InitBack],
 		},
 	})
 
-	p := chaos.New(initHandler, log)
+	p := chaos.New(c, handler, log)
 	if err != nil {
 		return nil, err
 	}

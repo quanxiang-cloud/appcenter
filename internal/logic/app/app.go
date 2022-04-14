@@ -88,31 +88,7 @@ func NewApp(c *config.Configs, db *gorm.DB) (logic.AppCenter, error) {
 		initServerBits: c.InitServerBits,
 	}
 
-	logger.Logger.Infof("app-center init")
-	err := appcenter.init()
-	if err != nil {
-		return nil, err
-	}
-	logger.Logger.Info("init done!")
 	return appcenter, nil
-}
-
-func (a *app) init() error {
-	apps, err := a.app.SelectByStatus(a.DB, unReady)
-	if err != nil {
-		return err
-	}
-	logger.Logger.Infof("%d apps should be inited", len(apps))
-	req := client.InitReq{}
-	for _, app := range apps {
-		req = append(req, client.Msg{
-			AppID:    app.ID,
-			CreateBy: app.CreateBy,
-			Content:  a.initServerBits,
-		})
-	}
-	// ctx := context.WithValue(context.Background(), "Request-Id", "appcenter-init")
-	return a.chaosAPI.Init(context.Background(), &req)
 }
 
 func (a *app) AdminPageList(ctx context.Context, rq *req.SelectListAppCenter) (*page.Page, error) {
@@ -696,4 +672,32 @@ func (a *app) InitServer(ctx context.Context, rq *req.InitServerReq) (*resp.Init
 	}})
 
 	return &resp.InitServerResp{}, err
+}
+
+func (a *app) ListAppByStatus(ctx context.Context, rq *req.ListAppByStatusReq) (*page.Page, error) {
+	list, total := a.app.SelectByStatus(a.DB, rq.Status, rq.Page, rq.Limit)
+	if len(list) > 0 {
+		res := make([]resp.AdminAppCenter, 0)
+		for k := range list {
+			appc := resp.AdminAppCenter{}
+			appc.ID = list[k].ID
+			appc.AppName = list[k].AppName
+			appc.AccessURL = list[k].AccessURL
+			appc.AppIcon = list[k].AppIcon
+			appc.CreateBy = list[k].CreateBy
+			appc.UpdateBy = list[k].UpdateBy
+			appc.CreateTime = list[k].CreateTime
+			appc.UpdateTime = list[k].UpdateTime
+			appc.UseStatus = list[k].UseStatus
+			appc.Server = list[k].Server
+			appc.Extension = getExtension(list[k].Extension)
+			appc.Description = list[k].Description
+			res = append(res, appc)
+		}
+		page := page.Page{}
+		page.Data = res
+		page.TotalCount = total
+		return &page, nil
+	}
+	return nil, nil
 }

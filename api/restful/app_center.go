@@ -540,3 +540,16 @@ func (a *AppCenter) InitServer(c *gin.Context) {
 	rq.CreateBy = c.GetHeader(_userID)
 	resp.Format(a.appCenter.InitServer(ctx, rq)).Context(c)
 }
+
+// ListAppByStatus ListAppByStatus
+func (a *AppCenter) ListAppByStatus(c *gin.Context) {
+	ctx := header2.MutateContext(c)
+
+	rq := req.ListAppByStatusReq{}
+	if err := c.ShouldBind(&rq); err != nil {
+		logger.Logger.Error(err)
+		resp.Format(nil, err).Context(c)
+		return
+	}
+	resp.Format(a.appCenter.ListAppByStatus(ctx, &rq)).Context(c)
+}
