@@ -172,6 +172,7 @@ func (ih *TaskHandler) getTasks() {
 func (ih *TaskHandler) run() {
 	for {
 		data := <-ih.task
+		ih.log.Debugf("do task [%v]", data)
 
 		if data.Time <= time.Now().Unix() {
 			ret, err := ih.taskHandler(data.CTX, data.Msg)
@@ -197,6 +198,7 @@ func (ih *TaskHandler) run() {
 				ih.log.Errorf("[resultHandler] failed to do: %s", err.Error())
 			}
 		} else {
+			ih.log.Debug("put msg into disk")
 			if err := ih.taskQueue.put(data); err != nil {
 				ih.log.Errorf(err.Error())
 			}
