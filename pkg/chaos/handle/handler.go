@@ -88,14 +88,23 @@ func (ih *TaskHandler) Put(ctx context.Context, msg define.Msg) error {
 			msg.Content = ih.defaultBit
 		}
 
-		if err := ih.taskQueue.put(data{
+		d := data{
 			Msg:          msg,
 			SerializeCTX: marshalCTXHeader(ctx),
+			CTX:          ctx,
 			Retry:        0,
 			Time:         time.Now().Unix(),
-		}); err != nil {
+		}
+
+		if len(ih.task) < cap(ih.task) {
+			ih.task <- d
+			return nil
+		}
+
+		if err := ih.taskQueue.put(d); err != nil {
 			return err
 		}
+		return nil
 	}
 	return fmt.Errorf("handler is stopping")
 }
@@ -139,7 +148,11 @@ func (ih *TaskHandler) getTasks() {
 	for {
 		d, err := ih.taskQueue.pop(ih.workload * 8)
 		if err != nil {
-			ih.log.Errorf(err.Error())
+			ih.log.Infof(err.Error())
+		}
+		if len(d) == 0 {
+			time.Sleep(2 * time.Minute)
+			continue
 		}
 
 		for _, one := range d {
@@ -151,8 +164,6 @@ func (ih *TaskHandler) getTasks() {
 			task.CTX = unmarshalCTXHeader(task.SerializeCTX)
 			ih.task <- *task
 		}
-
-		time.Sleep(5 * time.Minute)
 	}
 }
 
