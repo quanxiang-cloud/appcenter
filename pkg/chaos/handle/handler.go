@@ -97,10 +97,12 @@ func (ih *TaskHandler) Put(ctx context.Context, msg define.Msg) error {
 		}
 
 		if len(ih.task) < cap(ih.task) {
+			ih.log.Debug("put msg into task")
 			ih.task <- d
 			return nil
 		}
 
+		ih.log.Debug("put msg into disk")
 		if err := ih.taskQueue.put(d); err != nil {
 			return err
 		}
