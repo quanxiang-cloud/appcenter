@@ -541,6 +541,7 @@ func (a *AppCenter) InitServer(c *gin.Context) {
 	resp.Format(a.appCenter.InitServer(ctx, rq)).Context(c)
 }
 
+// ListAppByStatus ListAppByStatus
 func (a *AppCenter) ListAppByStatus(c *gin.Context) {
 	ctx := header2.MutateContext(c)
 

@@ -135,10 +135,10 @@ type serializeCTX struct {
 	TenantID  interface{} `json:"tenantID"`
 }
 
-const (
-	_requestID = "Request-Id"
-	_timezone  = "Timezone"
-	_tenantID  = "Tenant-Id"
+var (
+	_requestID interface{} = "Request-Id"
+	_timezone  interface{} = "Timezone"
+	_tenantID  interface{} = "Tenant-Id"
 )
 
 func marshalCTXHeader(c context.Context) serializeCTX {

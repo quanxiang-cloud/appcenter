@@ -153,6 +153,7 @@ type InitServerReq struct {
 	Server   int    `json:"server"`
 }
 
+// ListAppByStatusReq ListAppByStatusReq
 type ListAppByStatusReq struct {
 	Status int `json:"status"`
 	Page   int `json:"page"`

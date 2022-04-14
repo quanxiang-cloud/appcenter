@@ -16,4 +16,5 @@ type Executor interface {
 	Bit() int
 }
 
+// InitExecutor InitExecutor
 type InitExecutor func(*TaskHandler) error

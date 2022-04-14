@@ -17,6 +17,7 @@ type Chaos struct {
 	handler *handle.TaskHandler
 }
 
+// InitReq InitReq
 type InitReq struct {
 	Status int `json:"status"`
 	Page   int `json:"page"`

@@ -28,10 +28,17 @@ type app struct {
 	CreateBy string `json:"createBy"`
 }
 
+// define
+var (
+	requestID interface{} = "Request-Id"
+	initChaos interface{} = "init-chaos"
+)
+
+// InitExec InitExec
 func InitExec(handler *handle.TaskHandler) error {
 	c := handler.Config
 	cli := client.New(c.InternalNet)
-	ctx := context.WithValue(context.Background(), "Request-Id", "init-chaos")
+	ctx := context.WithValue(context.Background(), requestID, initChaos)
 
 	req := &listReq{
 		Status: -5,
