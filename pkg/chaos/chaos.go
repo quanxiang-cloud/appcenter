@@ -25,14 +25,16 @@ type InitReq struct {
 }
 
 // New New
-func New(c *config.Configs, handler *handle.TaskHandler, log logger.AdaptedLogger) *Chaos {
+func New(c *config.Configs, handler *handle.TaskHandler, log logger.AdaptedLogger) (*Chaos, error) {
 	chaos := &Chaos{
 		log:     log,
 		handler: handler,
 	}
-	chaos.handler.Run()
+	if err := chaos.handler.Run(); err != nil {
+		return nil, err
+	}
 
-	return chaos
+	return chaos, nil
 }
 
 type initResp struct{}
