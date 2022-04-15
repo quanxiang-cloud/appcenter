@@ -114,9 +114,11 @@ func (ih *TaskHandler) Put(ctx context.Context, msg define.Msg) error {
 // Run Run
 func (ih *TaskHandler) Run() error {
 	if ih.firstInit {
+		ih.log.Debugf("call init app")
 		if err := ih.initHandler(ih); err != nil {
 			return err
 		}
+		ih.log.Debugf("init done!")
 	}
 
 	if ih.taskHandler == nil {

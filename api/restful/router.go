@@ -153,7 +153,7 @@ func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger
 		},
 	})
 
-	p := chaos.New(c, handler, log)
+	p, err := chaos.New(c, handler, log)
 	if err != nil {
 		return nil, err
 	}
