@@ -1,54 +1,68 @@
-# model: debug|release
-model: debug
-http:
-  port: 9012
-  readHeaderTimeOut: 15
-  writeTimeOut: 600
-  maxHeaderBytes: 1048576
+# -------------------------------- AppCenter -----------------------------------
+app-center: 
+  # model: debug|release
+  model: debug
+  http:
+    port: 80
+    readHeaderTimeOut: 15
+    writeTimeOut: 600
+    maxHeaderBytes: 1048576
 
-#-------------------mysql---------------------
-mysql:
-  db: app_center
-  host: 
-  user: root
-  password: 
-  log: true
-
-
-
-#  -------------------- log --------------------
-# comply with zap log specification
-log:
-  level: -1
-  development: false
-  sampling:
-    initial: 100
-    thereafter: 100
-  outputPath:
-    - stderr
-  errorOutputPath:
-    - stderr
-
-#  -------------------- internalNet --------------------
-internalNet:
-  timeout: 20
-  maxIdleConns: 10
-
-#-------------------redis-----------------
-redis:
-  addrs:
-    - 
-    - 
-    - 
-  username:
-  password:
-
-#----------------inner server host----------
 innerHost:
   structor: "http://structor"
   flow: "http://flow"
   polyAPI: "http://polyapi:9090"
   org: "http://org"
 
-#----------------import app minimum version-----------
+# import app minimum version
 compatibleVersion: "0.7.3"
+
+# ------------------------------------ Common -----------------------------------
+mysql:
+  db: app_center
+  host: mysql:3306
+  user: root
+  password: 
+  log: true
+  
+redis:
+  addrs:
+    - redis:6379
+  username: 
+  password: 
+
+# comply with zap log specification
+log:
+  level: -1
+  
+internalNet:
+  timeout: 20
+  maxIdleConns: 10
+
+# ----------------------------------- Chaos -----------------------------------------
+chaos:
+  model: debug
+  http:
+    port: 6666
+
+# Amount of goroutine to handle tasks
+workLoad: 1
+
+# Maximum number of retries
+maximumRetry: 3
+
+# Duration of retrying
+waitTime: 2
+
+cachePath: /data.tmp
+
+# initialized server
+initServerBits: 3
+
+# Custom defination
+kv: 
+  form-role: http://form:8080/api/v1/form/%s/internal/apiRole/create
+  form-assign: http://form:8080/api/v1/form/%s/internal/apiRole/grant/assign/%s
+  init-back: http://localhost/api/v1/app-center/initCallBack
+  init-reload: http://localhost/api/v1/app-center/listAppByStatus
+  poly-init: http://polyapi:9090/api/v1/polyapi/inner/initAppPath

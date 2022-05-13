@@ -43,12 +43,12 @@ const (
 	unReleaseStatus   = -1
 	importingStatus   = -2
 	errorImportStatus = -3
-	appCenterRedis    = "appCenter:admins:"
-	perInitTypes      = 1
-	name              = "全部权限"
-	description       = "系统默认角色"
-	randNumber        = 5
-	preDelete         = "preDelete"
+	errorInitialize   = -4
+	unReady           = -5
+
+	appCenterRedis = "appCenter:admins:"
+	randNumber     = 5
+	preDelete      = "preDelete"
 
 	changeAdminKey   = "appCenter:admins:change"
 	changeAdminValue = "lockValue"
@@ -65,12 +65,15 @@ type app struct {
 	redisClient       *redis.ClusterClient
 	polyAPI           client.PolyAPI
 	flowAPI           client.Flow
+	chaosAPI          client.Chaos
 	CompatibleVersion string
+
+	initServerBits int
 }
 
 // NewApp return a app instance
-func NewApp(c *config.Configs, db *gorm.DB) logic.AppCenter {
-	return &app{
+func NewApp(c *config.Configs, db *gorm.DB) (logic.AppCenter, error) {
+	appcenter := &app{
 		app:               mysql.NewAppCenterRepo(),
 		appUser:           mysql.NewAppUserRelationRepo(),
 		appScope:          mysql.NewAppScopeRepo(),
@@ -79,9 +82,15 @@ func NewApp(c *config.Configs, db *gorm.DB) logic.AppCenter {
 		polyAPI:           client.NewPolyAPI(c),
 		redisClient:       redis2.ClusterClient,
 		flowAPI:           client.NewFlow(c),
+		chaosAPI:          client.NewChaos(c),
 		CompatibleVersion: c.CompatibleVersion,
+
+		initServerBits: c.InitServerBits,
 	}
+
+	return appcenter, nil
 }
+
 func (a *app) AdminPageList(ctx context.Context, rq *req.SelectListAppCenter) (*page.Page, error) {
 	list, total := a.app.SelectByPage(rq.UserID, rq.AppName, rq.UseStatus, rq.Page, rq.Limit, true, a.DB)
 	if len(list) > 0 {
@@ -97,6 +106,9 @@ func (a *app) AdminPageList(ctx context.Context, rq *req.SelectListAppCenter) (*
 			appc.CreateTime = list[k].CreateTime
 			appc.UpdateTime = list[k].UpdateTime
 			appc.UseStatus = list[k].UseStatus
+			appc.Server = list[k].Server
+			appc.Extension = getExtension(list[k].Extension)
+			appc.Description = list[k].Description
 			res = append(res, appc)
 		}
 		page := page.Page{}
@@ -122,6 +134,9 @@ func (a *app) SuperAdminPageList(ctx context.Context, rq *req.SelectListAppCente
 			appc.CreateTime = list[k].CreateTime
 			appc.UpdateTime = list[k].UpdateTime
 			appc.UseStatus = list[k].UseStatus
+			appc.Server = list[k].Server
+			appc.Extension = getExtension(list[k].Extension)
+			appc.Description = list[k].Description
 			res = append(res, appc)
 		}
 		page := page.Page{}
@@ -153,8 +168,11 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 	app.UpdateBy = rq.CreateBy
 	app.CreateTime = nowUnix
 	app.UpdateTime = nowUnix
-	app.UseStatus = unReleaseStatus
+	app.UseStatus = unReady
+	app.Server = 0
 	app.AppSign = rq.AppSign
+	app.Extension = getExtension(rq.Extension)
+	app.Description = rq.Description
 	tx := a.DB.Begin()
 	err := a.app.Insert(&app, tx)
 	if err != nil {
@@ -173,19 +191,15 @@ func (a *app) Add(ctx context.Context, rq *req.AddAppCenter) (*resp.AdminAppCent
 		CreateBy: rq.CreateBy,
 	}
 	tx.Commit()
+
 	// init server
-	scopes := make([]*client.ScopesVO, 0)
-	scope := &client.ScopesVO{
-		ID:   rq.CreateBy,
-		Type: 1,
-		Name: rq.CreateByName,
-	}
-	scopes = append(scopes, scope)
-	_, err = a.polyAPI.RequestPath(ctx, id, name, description, perInitTypes, scopes)
-	if err != nil {
-		return nil, err
-	}
-	return &center, nil
+	err = a.chaosAPI.Init(ctx, &client.InitReq{{
+		AppID:    app.ID,
+		CreateBy: app.CreateBy,
+		Content:  a.initServerBits,
+	}})
+
+	return &center, err
 }
 
 func (a *app) Update(ctx context.Context, rq *req.UpdateAppCenter) error {
@@ -216,6 +230,8 @@ func (a *app) Update(ctx context.Context, rq *req.UpdateAppCenter) error {
 	appc.AppIcon = rq.AppIcon
 	appc.UpdateBy = rq.UpdateBy
 	appc.UpdateTime = nowUnix
+	appc.Extension = getExtension(rq.Extension)
+	appc.Description = rq.Description
 	tx := a.DB.Begin()
 	err := a.app.Update(&appc, tx)
 	if err != nil {
@@ -271,6 +287,8 @@ func (a *app) AdminSelectByID(ctx context.Context, rq *req.SelectOneAppCenter) (
 		res.UseStatus = appc.UseStatus
 		res.DelFlag = appc.DelFlag
 		res.AppSign = appc.AppSign
+		res.Extension = getExtension(appc.Extension)
+		res.Description = appc.Description
 		return &res, nil
 	}
 	return nil, nil
@@ -379,14 +397,32 @@ func (a *app) AdminUsers(ctx context.Context, rq *req.SelectAdminUsers) (*page.P
 // UserPageList UserPageList
 func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*page.Page, error) {
 	// find appID
-	appIDs, err := a.appScope.GetByScope(a.DB, rq.UserID, rq.DepID)
-	if err != nil {
-		return nil, err
-	}
-	list, err := a.app.GetByIDs(a.DB, appIDs...)
-	if err != nil {
-		return nil, err
-	}
+	//appIDs, err := a.appScope.GetByScope(a.DB, rq.UserID, rq.DepID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//list, err := a.app.GetByIDs(a.DB, appIDs...)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(list) > 0 {
+	//	res := make([]resp.UserAppCenter, 0)
+	//	for k := range list {
+	//		if list[k].UseStatus == releaseStatus {
+	//			appc := resp.UserAppCenter{}
+	//			appc.ID = list[k].ID
+	//			appc.AppName = list[k].AppName
+	//			appc.AccessURL = list[k].AccessURL
+	//			appc.AppIcon = list[k].AppIcon
+	//			res = append(res, appc)
+	//		}
+	//	}
+	//	page := page.Page{}
+	//	page.Data = res
+	//	page.TotalCount = int64(len(res))
+	//	return &page, nil
+	//}
+	list, count := a.app.SelectByPage(rq.UserID, rq.AppName, releaseStatus, rq.Page, rq.Limit, false, a.DB)
 	if len(list) > 0 {
 		res := make([]resp.UserAppCenter, 0)
 		for k := range list {
@@ -396,14 +432,17 @@ func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*p
 				appc.AppName = list[k].AppName
 				appc.AccessURL = list[k].AccessURL
 				appc.AppIcon = list[k].AppIcon
+				appc.Extension = getExtension(list[k].Extension)
+				appc.Description = list[k].Description
 				res = append(res, appc)
 			}
 		}
 		page := page.Page{}
 		page.Data = res
-		page.TotalCount = int64(len(res))
+		page.TotalCount = count
 		return &page, nil
 	}
+
 	return nil, nil
 }
 
@@ -419,10 +458,12 @@ func (a *app) GetAppsByIDs(ctx context.Context, req *req.GetAppsByIDsReq) (*resp
 
 	for _, appc := range apps {
 		result.Apps = append(result.Apps, &resp.UserAppCenter{
-			ID:        appc.ID,
-			AppName:   appc.AppName,
-			AppIcon:   appc.AppIcon,
-			AccessURL: appc.AccessURL,
+			ID:          appc.ID,
+			AppName:     appc.AppName,
+			AppIcon:     appc.AppIcon,
+			AccessURL:   appc.AccessURL,
+			Extension:   getExtension(appc.Extension),
+			Description: appc.Description,
 		})
 	}
 
@@ -523,6 +564,7 @@ func (a *app) CreateImportApp(ctx context.Context, rq *req.AddAppCenter) (*resp.
 	app.AppName = rq.AppName
 	app.AccessURL = rq.AccessURL
 	app.AppIcon = rq.AppIcon
+	app.Server = a.initServerBits
 	app.CreateBy = rq.CreateBy
 	app.UpdateBy = rq.CreateBy
 	app.CreateTime = nowUnix
@@ -595,4 +637,67 @@ func (a *app) CheckAppAccess(ctx context.Context, rq *req.CheckAppAccessReq) (*r
 	return &resp.CheckAppAccessResp{
 		IsAuthority: appIDCount > 0,
 	}, nil
+}
+
+func getExtension(data map[string]interface{}) map[string]interface{} {
+	if data == nil {
+		return map[string]interface{}{}
+	}
+	return data
+}
+
+func (a *app) InitCallBack(ctx context.Context, rq *req.InitCallBackReq) (*resp.InitCallBackResp, error) {
+	status := &models.AppCenter{
+		ID:        rq.ID,
+		UpdateBy:  rq.UpdateBy,
+		Server:    rq.Ret,
+		UseStatus: errorInitialize,
+	}
+
+	if rq.Status {
+		status.UseStatus = unReleaseStatus
+	}
+
+	if err := a.app.Update(status, a.DB); err != nil {
+		return nil, err
+	}
+	return &resp.InitCallBackResp{}, nil
+}
+
+func (a *app) InitServer(ctx context.Context, rq *req.InitServerReq) (*resp.InitServerResp, error) {
+	err := a.chaosAPI.Init(ctx, &client.InitReq{{
+		AppID:    rq.ID,
+		CreateBy: rq.CreateBy,
+		Content:  a.initServerBits,
+	}})
+
+	return &resp.InitServerResp{}, err
+}
+
+func (a *app) ListAppByStatus(ctx context.Context, rq *req.ListAppByStatusReq) (*page.Page, error) {
+	list, total := a.app.SelectByStatus(a.DB, rq.Status, rq.Page, rq.Limit)
+	if len(list) > 0 {
+		res := make([]resp.AdminAppCenter, 0)
+		for k := range list {
+			appc := resp.AdminAppCenter{}
+			appc.ID = list[k].ID
+			appc.AppName = list[k].AppName
+			appc.AccessURL = list[k].AccessURL
+			appc.AppIcon = list[k].AppIcon
+			appc.CreateBy = list[k].CreateBy
+			appc.UpdateBy = list[k].UpdateBy
+			appc.CreateTime = list[k].CreateTime
+			appc.UpdateTime = list[k].UpdateTime
+			appc.UseStatus = list[k].UseStatus
+			appc.Server = list[k].Server
+			appc.Extension = getExtension(list[k].Extension)
+			appc.Description = list[k].Description
+			res = append(res, appc)
+		}
+		page := page.Page{}
+		page.Data = res
+		page.TotalCount = total
+		return &page, nil
+	}
+	return nil, nil
 }

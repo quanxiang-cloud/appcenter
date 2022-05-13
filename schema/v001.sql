@@ -23,6 +23,7 @@ create table t_app_center
     create_time bigint       null,
     update_time bigint       null,
     use_status  bigint       null,
+    app_sign    varchar(30)  null,
     constraint t_app_center_app_name_uindex
         unique (app_name)
 );
@@ -33,7 +34,8 @@ create table t_app_user_relation
     app_id  varchar(64) null
 );
 
-create table t_app_scope(
-    app_id varchar(64) null ,
+create table t_app_scope
+(
+    app_id   varchar(64) null,
     scope_id varchar(64) null
 )

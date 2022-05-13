@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	configPath = flag.String("config", "../configs/config.yml", "-config 配置文件地址")
+	configPath = flag.String("config", "../../configs/config.yml", "-config 配置文件地址")
 )
 
 func main() {
@@ -38,6 +38,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	config.Config.Model = config.Config.AppCenter.Model
+	config.Config.HTTPServer = config.Config.AppCenter.HTTPServer
 
 	logger.Logger = logger.New(&config.Config.Log)
 

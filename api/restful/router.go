@@ -18,9 +18,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/quanxiang-cloud/appcenter/pkg/broker"
+	"github.com/quanxiang-cloud/appcenter/pkg/chaos"
+	exec "github.com/quanxiang-cloud/appcenter/pkg/chaos/executor"
+	"github.com/quanxiang-cloud/appcenter/pkg/chaos/handle"
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
 	"github.com/quanxiang-cloud/appcenter/pkg/probe"
 	"github.com/quanxiang-cloud/cabin/logger"
+	"github.com/quanxiang-cloud/cabin/tailormade/client"
 	"github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	ginlog "github.com/quanxiang-cloud/cabin/tailormade/gin"
 )
@@ -52,7 +57,10 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 	if err != nil {
 		return nil, err
 	}
-	app := NewAppCenter(c, db)
+	app, err := NewAppCenter(c, db)
+	if err != nil {
+		return nil, err
+	}
 
 	k := v1.Group("")
 	{
@@ -80,6 +88,9 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 		k.POST("/checkVersion", app.CheckVersion)
 		k.POST("/exportApp", app.ExportApp)
 		k.POST("/importApp", app.CreateImportApp)
+		k.POST("/initCallBack", app.InitCallBack)
+		k.POST("/initServer", app.InitServer)
+		k.POST("/listAppByStatus", app.ListAppByStatus)
 	}
 
 	template := NewTemplate(c, db)
@@ -105,6 +116,53 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 	}
 	r.probe()
 	return r, nil
+}
+
+// NewInitRouter init router
+func NewInitRouter(c *config.Configs, b *broker.Broker, log logger.AdaptedLogger) (*Router, error) {
+	engine, err := newRouter(c)
+	if err != nil {
+		return nil, err
+	}
+
+	handler, err := handle.New(c, b, log)
+	if err != nil {
+		return nil, err
+	}
+	// TODO: set executors
+	handler.SetTaskExecutors(&exec.FormExecutor{
+		Client:     client.New(c.InternalNet),
+		CreateRole: c.KV[exec.FormCreateRole],
+		AssignRole: c.KV[exec.FormAssignRole],
+	}, &exec.PolyExecutor{
+		Client:  client.New(c.InternalNet),
+		PolyURL: c.KV[exec.PolyInit],
+	})
+
+	handler.SetInitExecutors(exec.InitExec)
+	handler.SetSuccessExecutors(&exec.SuccessExecutor{
+		BaseExecutor: exec.BaseExecutor{
+			Client:       client.New(c.InternalNet),
+			AppCenterURL: c.KV[exec.InitBack],
+		},
+	})
+	handler.SetFailureExecutors(&exec.FailureExecutor{
+		BaseExecutor: exec.BaseExecutor{
+			Client:       client.New(c.InternalNet),
+			AppCenterURL: c.KV[exec.InitBack],
+		},
+	})
+
+	p, err := chaos.New(c, handler, log)
+	if err != nil {
+		return nil, err
+	}
+	engine.POST("/init", p.Handle)
+
+	return &Router{
+		c:      c,
+		engine: engine,
+	}, nil
 }
 
 func newRouter(c *config.Configs) (*gin.Engine, error) {

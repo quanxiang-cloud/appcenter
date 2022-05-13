@@ -31,16 +31,40 @@ var Config *Configs
 // DefaultPath DefaultPath
 var DefaultPath = "./configs/config.yml"
 
+// AppCenter AppCenter
+type AppCenter struct {
+	Model      string     `yaml:"model"`
+	HTTPServer HTTPServer `yaml:"http"`
+}
+
+// Chaos Chaos
+type Chaos struct {
+	Model      string     `yaml:"model"`
+	HTTPServer HTTPServer `yaml:"http"`
+}
+
 // Configs Configs
 type Configs struct {
-	Model             string          `yaml:"model"`
-	HTTPServer        HTTPServer      `yaml:"http"`
+	AppCenter AppCenter `yaml:"app-center"`
+	Chaos     Chaos     `yaml:"chaos"`
+
+	Model      string
+	HTTPServer HTTPServer
+
 	Mysql             mysql2.Config   `yaml:"mysql"`
 	Log               logger.Config   `yaml:"log"`
 	InternalNet       client.Config   `yaml:"internalNet"`
 	Redis             redis2.Config   `yaml:"redis"`
 	InnerHost         InnerHostConfig `yaml:"innerHost"`
 	CompatibleVersion string          `yaml:"compatibleVersion"`
+
+	InitServerBits int `yaml:"initServerBits"`
+
+	WorkLoad     int               `yaml:"workLoad"`
+	MaximumRetry int               `yaml:"maximumRetry"`
+	WaitTime     int               `yaml:"waitTime"`
+	CachePath    string            `yaml:"cachePath"`
+	KV           map[string]string `yaml:"kv"`
 }
 
 // InnerHostConfig InnerHostConfig
