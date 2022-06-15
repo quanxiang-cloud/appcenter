@@ -75,6 +75,7 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 		k.POST("/adminUsers", app.AdminUsers)
 		k.POST("/checkIsAdmin", app.CheckIsAdmin)
 		k.POST("/checkAppAccess", app.CheckAppAccess)
+		k.POST("/perPoly", app.ChangePerPoly)
 
 		//----------------------home platform--------------------
 		k.POST("/userList", app.UserList)
@@ -91,6 +92,7 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 		k.POST("/initCallBack", app.InitCallBack)
 		k.POST("/initServer", app.InitServer)
 		k.POST("/listAppByStatus", app.ListAppByStatus)
+
 	}
 
 	template := NewTemplate(c, db)

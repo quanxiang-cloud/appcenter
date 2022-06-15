@@ -289,6 +289,7 @@ func (a *app) AdminSelectByID(ctx context.Context, rq *req.SelectOneAppCenter) (
 		res.AppSign = appc.AppSign
 		res.Extension = getExtension(appc.Extension)
 		res.Description = appc.Description
+		res.PerPoly = appc.PerPoly
 		return &res, nil
 	}
 	return nil, nil
@@ -531,6 +532,7 @@ func (a *app) GetOne(ctx context.Context, req *req.GetOneReq) (*resp.GetOneResp,
 		res.ID = appc.ID
 		res.Name = appc.AppName
 		res.DelFlag = appc.DelFlag
+		res.PerPoly = appc.PerPoly
 		return &res, nil
 	}
 	return nil, nil
@@ -700,4 +702,12 @@ func (a *app) ListAppByStatus(ctx context.Context, rq *req.ListAppByStatusReq) (
 		return &page, nil
 	}
 	return nil, nil
+}
+
+func (a *app) ChangePerPoly(ctx context.Context, rq *req.ChangePerPolyReq) (*resp.ChangePerPolyResp, error) {
+	err := a.app.ChangePerPoly(a.DB, rq.ID, rq.PerPoly) // Mark deletion
+	if err != nil {
+		return nil, err
+	}
+	return &resp.ChangePerPolyResp{}, nil
 }

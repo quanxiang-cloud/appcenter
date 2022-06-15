@@ -43,12 +43,14 @@ type AppCenter struct {
 	UseStatus  int    `gorm:"column:use_status;"  json:"useStatus"` //published1，unpublished-1
 	Server     int    `gorm:"column:server;" json:"server"`
 	DelFlag    int64  `gorm:"column:del_flag;"  json:"delFlag"` //delete marker 0 not deleted 1 deleted
+
 	// The default time is five days after you click delete.
 	// If you click delete in the recycle bin, the delete time changes to the current time
 	DeleteTime  int64     `gorm:"column:delete_time;type:bigint; " json:"deleteTime"` //default remove
 	AppSign     string    `gorm:"column:app_sign" json:"appSign"`
 	Description string    `gorm:"column:description" json:"description"`
 	Extension   Extension `gorm:"column:extension"`
+	PerPoly     bool      `gorm:"column:per_poly;"  json:"perPoly"` //delete marker 0 not deleted 1 deleted
 }
 
 // Value Value
@@ -76,6 +78,7 @@ type AppRepo interface {
 	Delete(id string, tx *gorm.DB) error
 	GetByIDs(tx *gorm.DB, ids ...string) ([]*AppCenter, error)
 	UpdateDelFlag(db *gorm.DB, id string, deleteTime int64) error
+	ChangePerPoly(db *gorm.DB, id string, perPoly bool) error
 	GetDeleteList(db *gorm.DB, deleteTime int64) ([]*AppCenter, error)
 	SelectByAppSign(db *gorm.DB, appSign string) *AppCenter
 	SelectByStatus(db *gorm.DB, status int, page, limit int) (list []AppCenter, total int64)

@@ -49,6 +49,12 @@ func (u appCenterRepo) UpdateDelFlag(db *gorm.DB, id string, deleteTime int64) e
 			"delete_time": deleteTime,
 		}).Error
 }
+func (u appCenterRepo) ChangePerPoly(db *gorm.DB, id string, perPoly bool) error {
+	return db.Model(&models.AppCenter{}).Where("id=?", id).Updates(
+		map[string]interface{}{
+			"per_poly": perPoly,
+		}).Error
+}
 
 func (u appCenterRepo) Insert(rq *models.AppCenter, tx *gorm.DB) (err error) {
 	err = tx.Create(rq).Error

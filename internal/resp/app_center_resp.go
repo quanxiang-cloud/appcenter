@@ -29,6 +29,7 @@ type AdminAppCenter struct {
 	AppSign     string                 `json:"appSign,omitempty"`
 	Extension   map[string]interface{} `json:"extension"`
 	Description string                 `json:"description"`
+	PerPoly     bool                   `json:"perPoly"`
 }
 
 // UserAppCenter UserAppCenter
@@ -60,6 +61,7 @@ type GetOneResp struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
 	DelFlag int64  `json:"delFlag"`
+	PerPoly bool   `json:"perPoly"`
 }
 
 // ExportAppResp ExportAppResp
@@ -96,4 +98,7 @@ type InitCallBackResp struct {
 
 // InitServerResp InitServerResp
 type InitServerResp struct {
+}
+
+type ChangePerPolyResp struct {
 }

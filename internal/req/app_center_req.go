@@ -159,3 +159,8 @@ type ListAppByStatusReq struct {
 	Page   int `json:"page"`
 	Limit  int `json:"limit"`
 }
+
+type ChangePerPolyReq struct {
+	ID      string `json:"appID"`
+	PerPoly bool   `json:"perPoly"` // 0 false 1 true
+}

@@ -74,4 +74,6 @@ type AppCenter interface {
 	InitServer(ctx context.Context, rq *req.InitServerReq) (*resp.InitServerResp, error)
 
 	ListAppByStatus(ctx context.Context, rq *req.ListAppByStatusReq) (*page.Page, error)
+
+	ChangePerPoly(ctx context.Context, rq *req.ChangePerPolyReq) (*resp.ChangePerPolyResp, error)
 }
