@@ -565,3 +565,26 @@ func (a *AppCenter) ChangePerPoly(c *gin.Context) {
 	}
 	resp.Format(a.appCenter.ChangePerPoly(ctx, &rq)).Context(c)
 }
+
+func (a *AppCenter) HomeAccessUpdate(c *gin.Context) {
+	ctx := header2.MutateContext(c)
+	rq := req.AddAppScopeReq{}
+	if err := c.ShouldBind(&rq); err != nil {
+		logger.Logger.Error(err)
+		resp.Format(nil, err).Context(c)
+		return
+	}
+	resp.Format(a.appCenter.AddAppScope(ctx, &rq)).Context(c)
+}
+
+func (a *AppCenter) HomeAccessList(c *gin.Context) {
+	ctx := header2.MutateContext(c)
+	rq := req.HomeAccessListReq{}
+	rq.AppID = c.Param("appID")
+	if err := c.ShouldBindQuery(&rq); err != nil {
+		logger.Logger.Error(err)
+		resp.Format(nil, err).Context(c)
+		return
+	}
+	resp.Format(a.appCenter.HomeAccessList(ctx, &rq)).Context(c)
+}

@@ -64,6 +64,9 @@ func NewRouter(c *config.Configs, log logger.AdaptedLogger) (*Router, error) {
 
 	k := v1.Group("")
 	{
+		k.POST("/homeAccess/update/owner", app.HomeAccessUpdate)
+
+		k.GET("/homeAccess/:appID", app.HomeAccessList)
 		k.POST("/add", app.Add)
 		k.POST("/update", app.Update)
 		k.POST("/adminList", checkIsSuperAdmin(app.AdminList, app.SuperAdminList))

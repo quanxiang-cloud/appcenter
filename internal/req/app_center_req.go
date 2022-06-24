@@ -91,8 +91,9 @@ type CheckIsAdminReq struct {
 
 // AddAppScopeReq AddAppScopeReq
 type AddAppScopeReq struct {
-	AppID  string   `json:"appID"`
-	Scopes []string `json:"scopes"`
+	AppID  string   `json:"appID" binding:"required"`
+	Add    []string `json:"add"`
+	Delete []string `json:"delete"`
 }
 
 // GetOneReq GetOneReq
@@ -163,4 +164,10 @@ type ListAppByStatusReq struct {
 type ChangePerPolyReq struct {
 	ID      string `json:"appID"`
 	PerPoly bool   `json:"perPoly"` // 0 false 1 true
+}
+
+type HomeAccessListReq struct {
+	AppID string
+	Page  int `form:"page" binding:"required"`
+	Size  int `form:"size" binding:"required"`
 }

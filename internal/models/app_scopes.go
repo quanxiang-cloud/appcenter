@@ -30,7 +30,8 @@ type AppUserVO struct {
 // AppScopeRepo AppScopeRepo
 type AppScopeRepo interface {
 	AppUserDep(db *gorm.DB, appID string, scopes []string) error
-	DeleteByID(db *gorm.DB, appID string) error
+	DeleteByID(db *gorm.DB, appID string, userID []string) error
 	GetByScope(db *gorm.DB, userID, depID string) ([]string, error)
 	GetAppByUserID(db *gorm.DB, appID string, userID, depID string) (int64, error)
+	GetByAppID(db *gorm.DB, appID string, page, size int) ([]*AppScope, int64, error)
 }

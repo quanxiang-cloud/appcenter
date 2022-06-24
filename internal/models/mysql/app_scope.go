@@ -60,8 +60,8 @@ func (a *appScopeRepo) AppUserDep(db *gorm.DB, appID string, scopes []string) er
 	return db.Exec(buffer.String()).Error
 }
 
-func (a *appScopeRepo) DeleteByID(db *gorm.DB, appID string) error {
-	return db.Table(a.TableName()).Where("app_id = ?", appID).
+func (a *appScopeRepo) DeleteByID(db *gorm.DB, appID string, userID []string) error {
+	return db.Table(a.TableName()).Where("app_id = ? and scope_id in  ? ", appID, userID).
 		Delete(&models.AppScope{}).
 		Error
 
@@ -85,4 +85,25 @@ func (a *appScopeRepo) GetAppByUserID(db *gorm.DB, appID string, userID, depID s
 	var total int64
 	ql.Count(&total)
 	return total, nil
+}
+func (a *appScopeRepo) GetByAppID(db *gorm.DB, appID string, page, size int) ([]*models.AppScope, int64, error) {
+	var (
+		appScope []*models.AppScope
+		count    int64
+	)
+
+	ql := db.Table(a.TableName())
+	ql = ql.Where("app_id = ?", appID)
+	err := ql.Count(&count).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = ql.Offset((page - 1) * size).Limit(size).Find(&appScope).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return appScope, count, nil
+
 }

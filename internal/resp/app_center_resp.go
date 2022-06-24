@@ -102,3 +102,8 @@ type InitServerResp struct {
 
 type ChangePerPolyResp struct {
 }
+
+type HomeAccessListResp struct {
+	List  []string `json:"list"`
+	Total int64    `json:"total"`
+}

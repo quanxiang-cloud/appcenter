@@ -54,6 +54,9 @@ type AppCenter interface {
 	GetAppsByIDs(ctx context.Context, req *req.GetAppsByIDsReq) (*resp.GetAppsByIDsResp, error)
 	// AddAppScope AddAppScope
 	AddAppScope(ctx context.Context, req *req.AddAppScopeReq) (*resp.AddAppScopeResp, error)
+	// HomeAccessList  HomeAccessList
+	HomeAccessList(ctx context.Context, req *req.HomeAccessListReq) (*resp.HomeAccessListResp, error)
+
 	// GetOne GetOne
 	GetOne(ctx context.Context, req *req.GetOneReq) (*resp.GetOneResp, error)
 	// CheckAppAccess CheckAppAccess

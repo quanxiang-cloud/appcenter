@@ -397,33 +397,15 @@ func (a *app) AdminUsers(ctx context.Context, rq *req.SelectAdminUsers) (*page.P
 
 // UserPageList UserPageList
 func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*page.Page, error) {
-	// find appID
-	//appIDs, err := a.appScope.GetByScope(a.DB, rq.UserID, rq.DepID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//list, err := a.app.GetByIDs(a.DB, appIDs...)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if len(list) > 0 {
-	//	res := make([]resp.UserAppCenter, 0)
-	//	for k := range list {
-	//		if list[k].UseStatus == releaseStatus {
-	//			appc := resp.UserAppCenter{}
-	//			appc.ID = list[k].ID
-	//			appc.AppName = list[k].AppName
-	//			appc.AccessURL = list[k].AccessURL
-	//			appc.AppIcon = list[k].AppIcon
-	//			res = append(res, appc)
-	//		}
-	//	}
-	//	page := page.Page{}
-	//	page.Data = res
-	//	page.TotalCount = int64(len(res))
-	//	return &page, nil
-	//}
-	list, count := a.app.SelectByPage(rq.UserID, rq.AppName, releaseStatus, rq.Page, rq.Limit, false, a.DB)
+	//find appID
+	appIDs, err := a.appScope.GetByScope(a.DB, rq.UserID, rq.DepID)
+	if err != nil {
+		return nil, err
+	}
+	list, err := a.app.GetByIDs(a.DB, appIDs...)
+	if err != nil {
+		return nil, err
+	}
 	if len(list) > 0 {
 		res := make([]resp.UserAppCenter, 0)
 		for k := range list {
@@ -433,16 +415,34 @@ func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*p
 				appc.AppName = list[k].AppName
 				appc.AccessURL = list[k].AccessURL
 				appc.AppIcon = list[k].AppIcon
-				appc.Extension = getExtension(list[k].Extension)
-				appc.Description = list[k].Description
 				res = append(res, appc)
 			}
 		}
 		page := page.Page{}
 		page.Data = res
-		page.TotalCount = count
+		page.TotalCount = int64(len(res))
 		return &page, nil
 	}
+	//list, count := a.app.SelectByPage(rq.UserID, rq.AppName, releaseStatus, rq.Page, rq.Limit, false, a.DB)
+	//if len(list) > 0 {
+	//	res := make([]resp.UserAppCenter, 0)
+	//	for k := range list {
+	//		if list[k].UseStatus == releaseStatus {
+	//			appc := resp.UserAppCenter{}
+	//			appc.ID = list[k].ID
+	//			appc.AppName = list[k].AppName
+	//			appc.AccessURL = list[k].AccessURL
+	//			appc.AppIcon = list[k].AppIcon
+	//			appc.Extension = getExtension(list[k].Extension)
+	//			appc.Description = list[k].Description
+	//			res = append(res, appc)
+	//		}
+	//	}
+	//	page := page.Page{}
+	//	page.Data = res
+	//	page.TotalCount = count
+	//	return &page, nil
+	//}
 
 	return nil, nil
 }
@@ -509,19 +509,40 @@ func (a *app) redisAdminUserCacheUpdate(ctx context.Context, appID string, userI
 // AddAppScope AddAppScope
 func (a *app) AddAppScope(ctx context.Context, req *req.AddAppScopeReq) (*resp.AddAppScopeResp, error) {
 	tx := a.DB.Begin()
-	// 1. delete
-	err := a.appScope.DeleteByID(tx, req.AppID)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
+	var err error
+	if len(req.Add) != 0 {
+		err = a.appScope.AppUserDep(tx, req.AppID, req.Add)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 	}
-	err = a.appScope.AppUserDep(tx, req.AppID, req.Scopes)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
+	if len(req.Delete) != 0 {
+		err = a.appScope.DeleteByID(tx, req.AppID, req.Delete)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 	}
+
 	tx.Commit()
 	return &resp.AddAppScopeResp{}, nil
+}
+
+func (a *app) HomeAccessList(ctx context.Context, req *req.HomeAccessListReq) (*resp.HomeAccessListResp, error) {
+	list, total, err := a.appScope.GetByAppID(a.DB, req.AppID, req.Page, req.Size)
+	if err != nil {
+		return nil, err
+	}
+	resp := &resp.HomeAccessListResp{
+		List: make([]string, total),
+	}
+	for index, value := range list {
+		resp.List[index] = value.ScopeID
+	}
+	resp.Total = total
+	return resp, nil
+
 }
 
 // GetOne GetOne
