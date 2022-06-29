@@ -35,7 +35,6 @@ func (a *appScopeRepo) GetByScope(db *gorm.DB, userID, depID string) ([]string, 
 	result := make([]string, 0)
 	err := db.Table(a.TableName()).Distinct("app_id").Where("scope_id in  ?", arr).Find(&result).Error
 	if err != nil {
-		fmt.Println(err.Error())
 		return nil, err
 	}
 	return result, nil

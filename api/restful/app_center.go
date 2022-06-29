@@ -311,8 +311,7 @@ func (a *AppCenter) UserList(c *gin.Context) {
 		return
 	}
 	rq.UserID = c.GetHeader(_userID)
-	departments := strings.Split(c.GetHeader(_departmentID), ",")
-	rq.DepID = departments[0]
+
 	res, err := a.appCenter.UserPageList(ctx, &rq)
 
 	if err != nil {
@@ -581,7 +580,7 @@ func (a *AppCenter) HomeAccessList(c *gin.Context) {
 	ctx := header2.MutateContext(c)
 	rq := req.HomeAccessListReq{}
 	rq.AppID = c.Param("appID")
-	if err := c.ShouldBindQuery(&rq); err != nil {
+	if err := c.ShouldBind(&rq); err != nil {
 		logger.Logger.Error(err)
 		resp.Format(nil, err).Context(c)
 		return

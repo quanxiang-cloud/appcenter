@@ -15,15 +15,13 @@ package main
 
 import (
 	"flag"
-
+	"github.com/quanxiang-cloud/appcenter/pkg/redis"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/quanxiang-cloud/appcenter/api/restful"
 	"github.com/quanxiang-cloud/appcenter/pkg/config"
-	"github.com/quanxiang-cloud/appcenter/pkg/redis"
-
 	"github.com/quanxiang-cloud/cabin/logger"
 )
 

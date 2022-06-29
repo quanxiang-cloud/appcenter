@@ -76,7 +76,7 @@ type AppRepo interface {
 	Insert(app *AppCenter, tx *gorm.DB) error
 	Update(app *AppCenter, tx *gorm.DB) error
 	Delete(id string, tx *gorm.DB) error
-	GetByIDs(tx *gorm.DB, ids ...string) ([]*AppCenter, error)
+	GetByIDs(tx *gorm.DB, page, size int, ids ...string) ([]*AppCenter, int64, error)
 	UpdateDelFlag(db *gorm.DB, id string, deleteTime int64) error
 	ChangePerPoly(db *gorm.DB, id string, perPoly bool) error
 	GetDeleteList(db *gorm.DB, deleteTime int64) ([]*AppCenter, error)

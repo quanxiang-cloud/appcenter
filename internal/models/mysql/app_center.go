@@ -139,13 +139,26 @@ func (u appCenterRepo) SelectByName(name string, db *gorm.DB) (res *models.AppCe
 	return nil
 }
 
-func (u appCenterRepo) GetByIDs(tx *gorm.DB, ids ...string) ([]*models.AppCenter, error) {
-	apps := make([]*models.AppCenter, 0, len(ids))
-	err := tx.Model(&models.AppCenter{}).
-		Where("id in ? ", ids).Where("del_flag = 0").Order("update_time desc").
-		Find(&apps).
-		Error
-	return apps, err
+func (u appCenterRepo) GetByIDs(tx *gorm.DB, page, size int, ids ...string) ([]*models.AppCenter, int64, error) {
+
+	var (
+		appCenter []*models.AppCenter
+		count     int64
+	)
+	ql := tx.Model(&models.AppCenter{})
+	ql = ql.Where("id in  ?", ids)
+	err := ql.Count(&count).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = ql.Offset((page - 1) * size).Limit(size).Find(&appCenter).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return appCenter, count, nil
+
 }
 
 //NewAppCenterRepo init repo

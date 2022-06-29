@@ -168,6 +168,6 @@ type ChangePerPolyReq struct {
 
 type HomeAccessListReq struct {
 	AppID string
-	Page  int `form:"page" binding:"required"`
-	Size  int `form:"size" binding:"required"`
+	Page  int `json:"page" binding:"required"`
+	Size  int `json:"size" binding:"required"`
 }

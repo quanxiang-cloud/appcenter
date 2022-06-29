@@ -402,7 +402,7 @@ func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*p
 	if err != nil {
 		return nil, err
 	}
-	list, err := a.app.GetByIDs(a.DB, appIDs...)
+	list, total, err := a.app.GetByIDs(a.DB, rq.Page, rq.Limit, appIDs...)
 	if err != nil {
 		return nil, err
 	}
@@ -420,36 +420,15 @@ func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*p
 		}
 		page := page.Page{}
 		page.Data = res
-		page.TotalCount = int64(len(res))
+		page.TotalCount = total
 		return &page, nil
 	}
-	//list, count := a.app.SelectByPage(rq.UserID, rq.AppName, releaseStatus, rq.Page, rq.Limit, false, a.DB)
-	//if len(list) > 0 {
-	//	res := make([]resp.UserAppCenter, 0)
-	//	for k := range list {
-	//		if list[k].UseStatus == releaseStatus {
-	//			appc := resp.UserAppCenter{}
-	//			appc.ID = list[k].ID
-	//			appc.AppName = list[k].AppName
-	//			appc.AccessURL = list[k].AccessURL
-	//			appc.AppIcon = list[k].AppIcon
-	//			appc.Extension = getExtension(list[k].Extension)
-	//			appc.Description = list[k].Description
-	//			res = append(res, appc)
-	//		}
-	//	}
-	//	page := page.Page{}
-	//	page.Data = res
-	//	page.TotalCount = count
-	//	return &page, nil
-	//}
-
 	return nil, nil
 }
 
 // GetAppsByIDs GetAppsByIDs
 func (a *app) GetAppsByIDs(ctx context.Context, req *req.GetAppsByIDsReq) (*resp.GetAppsByIDsResp, error) {
-	apps, err := a.app.GetByIDs(a.DB, req.IDs...)
+	apps, _, err := a.app.GetByIDs(a.DB, 1, 999, req.IDs...)
 	if err != nil {
 		return nil, err
 	}
