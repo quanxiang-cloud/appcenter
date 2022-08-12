@@ -1,0 +1,2 @@
+ALTER TABLE `app_center`.`t_app_scope` ADD COLUMN `id` int NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`);
+ALTER TABLE `app_center`.`t_app_user_relation` ADD COLUMN `id` int NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`);
