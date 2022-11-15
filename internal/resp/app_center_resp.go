@@ -13,6 +13,8 @@ limitations under the License.
 
 package resp
 
+import "github.com/quanxiang-cloud/appcenter/internal/models"
+
 // AdminAppCenter AdminAppCenter
 type AdminAppCenter struct {
 	ID          string                 `json:"id"`
@@ -104,6 +106,6 @@ type ChangePerPolyResp struct {
 }
 
 type HomeAccessListResp struct {
-	List  []string `json:"list"`
-	Total int64    `json:"total"`
+	List  []models.Scope `json:"list"`
+	Total int64          `json:"total"`
 }

@@ -43,24 +43,24 @@ func (a *appScopeRepo) GetByScope(db *gorm.DB, userID, depID string) ([]string, 
 func (a *appScopeRepo) TableName() string {
 	return "t_app_scope"
 }
-func (a *appScopeRepo) AppUserDep(db *gorm.DB, appID string, scopes []string) error {
+func (a *appScopeRepo) AppUserDep(db *gorm.DB, appID string, scopes []models.Scope) error {
 	var buffer bytes.Buffer
-	sql := "insert into `t_app_scope` (`app_id`,`scope_id`) values"
+	sql := "insert into `t_app_scope` (`app_id`,`scope_id`,`type`) values"
 	if _, err := buffer.WriteString(sql); err != nil {
 		return err
 	}
 	for i, value := range scopes {
 		if i == len(scopes)-1 {
-			buffer.WriteString(fmt.Sprintf("('%s','%s');", appID, value))
+			buffer.WriteString(fmt.Sprintf("('%s','%s','%s');", appID, value.ScopeID, value.Type))
 		} else {
-			buffer.WriteString(fmt.Sprintf("('%s','%s'),", appID, value))
+			buffer.WriteString(fmt.Sprintf("('%s','%s','%s'),", appID, value.ScopeID, value.Type))
 		}
 	}
 	return db.Exec(buffer.String()).Error
 }
 
-func (a *appScopeRepo) DeleteByID(db *gorm.DB, appID string, userID []string) error {
-	return db.Table(a.TableName()).Where("app_id = ? and scope_id in  ? ", appID, userID).
+func (a *appScopeRepo) DeleteByID(db *gorm.DB, appID string, scopeIDs []string) error {
+	return db.Table(a.TableName()).Where("app_id = ? and scope_id in  ? ", appID, scopeIDs).
 		Delete(&models.AppScope{}).
 		Error
 
