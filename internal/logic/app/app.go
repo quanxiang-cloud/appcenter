@@ -397,6 +397,22 @@ func (a *app) AdminUsers(ctx context.Context, rq *req.SelectAdminUsers) (*page.P
 
 // UserPageList UserPageList
 func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*page.Page, error) {
+	if rq.DepID == "" {
+		userInfo, err := a.org.GetUserInfo(ctx, &client.OneUserRequest{
+			ID: rq.UserID,
+		})
+		if err != nil {
+			logger.Logger.Error("delete flow is error ", err.Error())
+			return &page.Page{}, nil
+		}
+		if len(userInfo.Dep) != 0 {
+			dep := userInfo.Dep[0]
+			if len(dep) != 0 {
+				rq.DepID = dep[0].ID
+			}
+		}
+	}
+
 	//find appID
 	appIDs, err := a.appScope.GetByScope(a.DB, rq.UserID, rq.DepID)
 	if err != nil {
@@ -514,10 +530,13 @@ func (a *app) HomeAccessList(ctx context.Context, req *req.HomeAccessListReq) (*
 		return nil, err
 	}
 	resp := &resp.HomeAccessListResp{
-		List: make([]string, total),
+		List: make([]models.Scope, total),
 	}
 	for index, value := range list {
-		resp.List[index] = value.ScopeID
+		resp.List[index] = models.Scope{
+			ScopeID: value.ScopeID,
+			Type:    value.Type,
+		}
 	}
 	resp.Total = total
 	return resp, nil

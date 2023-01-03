@@ -19,17 +19,23 @@ import "gorm.io/gorm"
 type AppScope struct {
 	AppID   string `gorm:"column:app_id;type:varchar(64)"`
 	ScopeID string `gorm:"column:scope_id;type:varchar(64)"`
+	Type    string `gorm:"column:type;type:varchar(64)"`
 }
 
 // AppUserVO AppUserVO
 type AppUserVO struct {
 	AppID string `json:"appID"`
-	Scope string `json:"scope"`
+	Scope Scope  `json:"scope"`
+}
+
+type Scope struct {
+	ScopeID string `json:"scopeID"`
+	Type    string `json:"type"`
 }
 
 // AppScopeRepo AppScopeRepo
 type AppScopeRepo interface {
-	AppUserDep(db *gorm.DB, appID string, scopes []string) error
+	AppUserDep(db *gorm.DB, appID string, scopes []Scope) error
 	DeleteByID(db *gorm.DB, appID string, userID []string) error
 	GetByScope(db *gorm.DB, userID, depID string) ([]string, error)
 	GetAppByUserID(db *gorm.DB, appID string, userID, depID string) (int64, error)

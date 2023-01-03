@@ -95,7 +95,6 @@ func (p *polyapi) RequestPath(ctx context.Context, appID, name, description stri
 
 // ScopesVO ScopesVO
 type ScopesVO struct {
-	Type int16  `json:"type"`
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
