@@ -13,6 +13,8 @@ limitations under the License.
 
 package req
 
+import "github.com/quanxiang-cloud/appcenter/internal/models"
+
 //AddAppCenter AddAppCenter
 type AddAppCenter struct {
 	AppName      string                 `json:"appName" binding:"required,max=80,excludesall=0x2C!@#$?.%:*&^+><=；;"`
@@ -91,9 +93,9 @@ type CheckIsAdminReq struct {
 
 // AddAppScopeReq AddAppScopeReq
 type AddAppScopeReq struct {
-	AppID  string   `json:"appID" binding:"required"`
-	Add    []string `json:"add"`
-	Delete []string `json:"delete"`
+	AppID  string         `json:"appID" binding:"required"`
+	Add    []models.Scope `json:"add"`
+	Delete []string       `json:"delete"`
 }
 
 // GetOneReq GetOneReq
