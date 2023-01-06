@@ -402,7 +402,7 @@ func (a *app) UserPageList(ctx context.Context, rq *req.SelectListAppCenter) (*p
 			ID: rq.UserID,
 		})
 		if err != nil {
-			logger.Logger.Error("delete flow is error ", err.Error())
+			logger.Logger.Error("fail get user info ", err.Error())
 			return &page.Page{}, nil
 		}
 		if len(userInfo.Dep) != 0 {
