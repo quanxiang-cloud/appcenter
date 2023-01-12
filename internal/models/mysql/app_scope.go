@@ -66,6 +66,13 @@ func (a *appScopeRepo) DeleteByID(db *gorm.DB, appID string, scopeIDs []string) 
 
 }
 
+func (a *appScopeRepo) DeleteByAppID(db *gorm.DB, appID string) error {
+	return db.Table(a.TableName()).Where("app_id = ?", appID).
+		Delete(&models.AppScope{}).
+		Error
+
+}
+
 //NewAppScopeRepo init repo
 func NewAppScopeRepo() models.AppScopeRepo {
 	return &appScopeRepo{}

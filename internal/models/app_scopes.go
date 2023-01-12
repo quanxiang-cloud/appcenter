@@ -40,4 +40,5 @@ type AppScopeRepo interface {
 	GetByScope(db *gorm.DB, userID, depID string) ([]string, error)
 	GetAppByUserID(db *gorm.DB, appID string, userID, depID string) (int64, error)
 	GetByAppID(db *gorm.DB, appID string, page, size int) ([]*AppScope, int64, error)
+	DeleteByAppID(db *gorm.DB, appID string) error
 }
