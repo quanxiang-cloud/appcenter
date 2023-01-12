@@ -268,6 +268,23 @@ func (a *app) Delete(ctx context.Context, rq *req.DelAppCenter) error {
 	_, err = a.flowAPI.RemoveApp(ctx, rq.ID, preDelete)
 	if err != nil {
 		logger.Logger.Error("delete flow is error ", err.Error())
+		return err
+	}
+
+	// remove users under the app
+	err = a.AddAdminUser(ctx, &req.AddAdminUser{
+		AppID: rq.ID,
+	})
+
+	if err != nil {
+		logger.Logger.Error("remove admin under the app is error ", err.Error())
+		return err
+	}
+
+	err = a.appScope.DeleteByAppID(a.DB, rq.ID)
+	if err != nil {
+		logger.Logger.Error("remove users under the app is error ", err.Error())
+		return err
 	}
 	return nil
 }
